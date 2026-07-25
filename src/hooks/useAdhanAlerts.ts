@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { AppSettings, PrayerTime } from '../types';
-import { playPrayerChime, playReminderPing } from '../utils/sound';
+import { playFullAdhan, playPrayerChime, playReminderPing } from '../utils/sound';
 import { showPrayerNotification } from '../utils/notifications';
 
 /**
@@ -18,8 +18,13 @@ export function useAdhanAlerts(
   const remindedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const key = current ? `${current.key}-${current.date.toDateString()}` : null;
+    if (!current) return;
+    const key = `${current.key}-${current.date.toDateString()}`;
 
+    // İlk defa gerçek veri geldiğinde (uygulama yeni açıldığında), o an hangi
+    // vakit içinde olunduğuna bakılmaksızın sessizce temel referans alınır;
+    // aksi halde uygulama bir ezan vakti ortasında açıldığında yanlışlıkla
+    // hemen ezan sesi çalardı.
     if (lastCurrentKeyRef.current === undefined) {
       lastCurrentKeyRef.current = key;
       return;
@@ -28,7 +33,10 @@ export function useAdhanAlerts(
     if (key !== lastCurrentKeyRef.current) {
       lastCurrentKeyRef.current = key;
       if (current?.isAdhan) {
-        if (settings.soundEnabled) playPrayerChime();
+        if (settings.soundEnabled) {
+          if (settings.adhanSoundMode === 'adhan') playFullAdhan();
+          else playPrayerChime();
+        }
         if (settings.notificationsEnabled) {
           showPrayerNotification(
             `${current.label} vakti girdi 🕌`,
@@ -37,7 +45,7 @@ export function useAdhanAlerts(
         }
       }
     }
-  }, [current, settings.soundEnabled, settings.notificationsEnabled]);
+  }, [current, settings.soundEnabled, settings.notificationsEnabled, settings.adhanSoundMode]);
 
   useEffect(() => {
     if (!settings.reminderMinutesBefore || !next?.isAdhan || msRemaining === null) return;
