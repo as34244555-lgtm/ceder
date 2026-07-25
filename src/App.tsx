@@ -16,9 +16,11 @@ import { usePrayerData } from './hooks/usePrayerData';
 import { useNextPrayer } from './hooks/useNextPrayer';
 import { useAdhanAlerts } from './hooks/useAdhanAlerts';
 import { useThemeEffect } from './hooks/useThemeEffect';
+import { useIslamicOccasion } from './hooks/useIslamicOccasion';
+import { OccasionBanner } from './components/OccasionBanner';
 import { reverseGeocodeLabel } from './api/geocode';
 import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
-import { primeAudio } from './utils/sound';
+import { primeAudio, unlockAdhanAudio } from './utils/sound';
 import {
   loadSelectedCity,
   loadSelectedCountry,
@@ -56,10 +58,29 @@ function App() {
   const { current, next, msRemaining } = useNextPrayer(today, tomorrow, now);
 
   useAdhanAlerts(current, next, msRemaining, settings);
+  const occasion = useIslamicOccasion(today?.hijri, settings.notificationsEnabled);
 
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  // Mobil tarayıcılarda (özellikle iOS) bir ezan vakti otomatik olarak sesi
+  // tetiklediğinde oynatmanın güvenilir çalışması için, kullanıcının
+  // uygulamadaki İLK dokunuşunda ses öğesinin kilidini sessizce açıyoruz.
+  useEffect(() => {
+    const unlock = () => {
+      primeAudio();
+      unlockAdhanAudio();
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
 
   useEffect(() => {
     if (geoStatus !== 'success' || !coords) return;
@@ -104,6 +125,8 @@ function App() {
 
         {activeTab === 'home' && (
           <>
+            {occasion && <OccasionBanner occasion={occasion} />}
+
             <LocationBar
               selectedCity={selectedCity}
               onCityChange={handleCityChange}
@@ -133,7 +156,7 @@ function App() {
           </>
         )}
 
-        {activeTab === 'qibla' && <QiblaCompass />}
+        {activeTab === 'qibla' && <QiblaCompass location={location} />}
 
         {activeTab === 'calendar' && (
           <MonthlyCalendar
