@@ -1,8 +1,3 @@
-export interface City {
-  il: string;
-  ilceleri?: string[];
-}
-
 export type PrayerKey =
   | 'imsak'
   | 'gunes'
@@ -35,8 +30,18 @@ export interface LocationInfo {
   source: 'gps' | 'city';
 }
 
+export type ThemeMode = 'dark' | 'light' | 'system';
+export type TimeFormat = '24' | '12';
+export type AdhanSoundMode = 'chime' | 'adhan';
+
 export interface AppSettings {
   soundEnabled: boolean;
   notificationsEnabled: boolean;
   reminderMinutesBefore: number | null;
+  calculationMethod: number;
+  theme: ThemeMode;
+  timeFormat: TimeFormat;
+  adhanSoundMode: AdhanSoundMode;
 }
+
+export type TabId = 'home' | 'qibla' | 'calendar' | 'zikir' | 'settings';

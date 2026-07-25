@@ -12,7 +12,7 @@ export function StatusBanner({ loading, error, onRetry }: StatusBannerProps) {
   return (
     <div
       className={`w-full rounded-2xl px-4 py-3 text-sm flex items-center justify-center gap-2 fade-in-up ${
-        error ? 'bg-red-500/15 text-red-200 border border-red-400/30' : 'text-emerald-100/70'
+        error ? 'bg-red-500/15 text-red-200 border border-red-400/30' : 'text-[var(--text-secondary)]'
       }`}
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -22,7 +22,7 @@ export function StatusBanner({ loading, error, onRetry }: StatusBannerProps) {
         <button
           type="button"
           onClick={onRetry}
-          className="underline underline-offset-2 hover:text-white ml-1"
+          className="underline underline-offset-2 hover:text-[var(--text-primary)] ml-1"
         >
           Tekrar dene
         </button>
