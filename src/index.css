@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --color-night-950: #04120e;
+  --color-night-900: #071e17;
+  --color-night-800: #0b3d2e;
+  --color-night-700: #0f4a37;
+  --color-gold-400: #f2c14e;
+  --color-gold-300: #f6d27f;
+  --color-gold-500: #d9a72e;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: radial-gradient(ellipse at top, #0f4a37 0%, #071e17 55%, #04120e 100%);
+  color: #eef7f1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  position: relative;
+  overflow-x: hidden;
+}
+
+.star-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #ffffff 100%, transparent 0),
+    radial-gradient(1px 1px at 80% 10%, #ffffff 100%, transparent 0),
+    radial-gradient(1.5px 1.5px at 30% 65%, #ffffff 100%, transparent 0),
+    radial-gradient(1px 1px at 60% 80%, #ffffff 100%, transparent 0),
+    radial-gradient(1.5px 1.5px at 90% 50%, #ffffff 100%, transparent 0),
+    radial-gradient(1px 1px at 45% 30%, #ffffff 100%, transparent 0),
+    radial-gradient(1px 1px at 15% 85%, #ffffff 100%, transparent 0),
+    radial-gradient(1.5px 1.5px at 70% 25%, #ffffff 100%, transparent 0);
+  background-size: 100% 100%;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 193, 78, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(242, 193, 78, 0);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.5s ease both;
+}
+
+::selection {
+  background: rgba(242, 193, 78, 0.35);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
