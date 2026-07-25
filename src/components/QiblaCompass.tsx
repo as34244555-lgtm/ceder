@@ -1,13 +1,23 @@
-import { useMemo } from 'react';
-import { Landmark, LocateFixed, Compass as CompassIcon, Loader2 } from 'lucide-react';
-import { useGeolocation } from '../hooks/useGeolocation';
+import { useMemo, useState } from 'react';
+import { Landmark, LocateFixed, Compass as CompassIcon, Loader2, MapPin } from 'lucide-react';
+import { useQiblaLocation } from '../hooks/useQiblaLocation';
 import { useCompassHeading } from '../hooks/useCompassHeading';
 import { calculateDistanceToKaabaKm, calculateQiblaBearing } from '../utils/qibla';
+import { geocodeCity } from '../api/geocode';
 import { primeAudio } from '../utils/sound';
+import { TURKISH_CITIES } from '../data/cities';
+import type { LocationInfo } from '../types';
 
-export function QiblaCompass() {
-  const { status, coords, error, requestLocation } = useGeolocation();
+interface QiblaCompassProps {
+  location: LocationInfo | null;
+}
+
+export function QiblaCompass({ location }: QiblaCompassProps) {
+  const { coords, resolving, resolveError, requestPreciseLocation, setManualCoords } =
+    useQiblaLocation(location);
   const { heading, permission, requestAccess } = useCompassHeading();
+  const [fallbackCity, setFallbackCity] = useState('');
+  const [fallbackLoading, setFallbackLoading] = useState(false);
 
   const qibla = useMemo(() => {
     if (!coords) return null;
@@ -19,7 +29,15 @@ export function QiblaCompass() {
 
   const handleUseLocation = () => {
     primeAudio();
-    requestLocation();
+    requestPreciseLocation();
+  };
+
+  const handleFallbackCity = async (city: string) => {
+    setFallbackCity(city);
+    setFallbackLoading(true);
+    const result = await geocodeCity(city, 'Turkey');
+    setFallbackLoading(false);
+    if (result) setManualCoords(result);
   };
 
   const needsCompassPermission = permission === 'unknown' || permission === 'denied';
@@ -34,24 +52,47 @@ export function QiblaCompass() {
         </div>
 
         {!coords ? (
-          <div className="flex flex-col items-center gap-4 py-8 text-center">
-            <p className="text-[var(--text-secondary)] text-sm max-w-xs">
-              Kıble yönünü hesaplayabilmek için konumunuza ihtiyacımız var.
-            </p>
-            <button
-              type="button"
-              onClick={handleUseLocation}
-              disabled={status === 'loading'}
-              className="flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-medium bg-gold-400/90 text-night-950 hover:bg-gold-300 active:scale-[0.98] transition disabled:opacity-60"
-            >
-              {status === 'loading' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <LocateFixed className="h-4 w-4" />
-              )}
-              Konumumu Kullan
-            </button>
-            {error && <p className="text-red-300 text-xs max-w-xs">{error}</p>}
+          <div className="flex flex-col items-center gap-4 py-8 text-center w-full">
+            {resolving ? (
+              <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" /> Konum belirleniyor…
+              </div>
+            ) : (
+              <>
+                <p className="text-[var(--text-secondary)] text-sm max-w-xs">
+                  Kıble yönünü hesaplayabilmek için konumunuza ihtiyacımız var.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleUseLocation}
+                  className="flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-medium bg-gold-400/90 text-night-950 hover:bg-gold-300 active:scale-[0.98] transition"
+                >
+                  <LocateFixed className="h-4 w-4" />
+                  Daha Hassas Konum İçin GPS Kullan
+                </button>
+                {resolveError && <p className="text-red-300 text-xs max-w-xs">{resolveError}</p>}
+
+                <div className="flex items-center gap-2 w-full max-w-xs mt-2 glass-card rounded-2xl px-3 py-2.5">
+                  <MapPin className="h-4 w-4 text-gold-400 shrink-0" />
+                  <select
+                    value={fallbackCity}
+                    onChange={(e) => void handleFallbackCity(e.target.value)}
+                    className="bg-transparent text-[var(--text-primary)] text-sm outline-none w-full cursor-pointer [&>option]:text-black"
+                    aria-label="Şehir seçerek kıbleyi hesapla"
+                  >
+                    <option value="" disabled>
+                      Veya şehir seçin…
+                    </option>
+                    {TURKISH_CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                  {fallbackLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -132,6 +173,15 @@ export function QiblaCompass() {
                 gösteriyor. Telefonunuzu düz tutup yavaşça 8 çizerek kalibre edebilirsiniz.
               </p>
             )}
+
+            <button
+              type="button"
+              onClick={handleUseLocation}
+              className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+            >
+              <LocateFixed className="h-3.5 w-3.5" />
+              Hassas GPS konumuyla güncelle
+            </button>
           </>
         )}
       </div>
