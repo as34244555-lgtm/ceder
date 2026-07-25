@@ -34,7 +34,7 @@ export function useAdhanAlerts(
       lastCurrentKeyRef.current = key;
       if (current?.isAdhan) {
         if (settings.soundEnabled) {
-          if (settings.adhanSoundMode === 'adhan') playFullAdhan();
+          if (settings.adhanSoundMode === 'adhan') playFullAdhan(false, `${current.label} Ezanı`);
           else playPrayerChime();
         }
         if (settings.notificationsEnabled) {

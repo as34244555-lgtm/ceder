@@ -149,8 +149,15 @@ export function SettingsScreen({
             disabled={!settings.soundEnabled}
             className="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-medium bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-soft-strong)] transition disabled:opacity-40 self-start"
           >
-            <Play className="h-3.5 w-3.5" /> Sesi önizle
+            <Play className="h-3.5 w-3.5" />
+            {settings.adhanSoundMode === 'adhan' ? 'Sesi önizle (kısa, 25 sn)' : 'Sesi önizle'}
           </button>
+          {settings.adhanSoundMode === 'adhan' && (
+            <p className="text-[11px] text-[var(--text-muted)]">
+              Gerçek ezan vakti girdiğinde kaydın tamamı (~2.5 dk) çalınır; burada sadece kısa
+              bir önizleme dinlersiniz.
+            </p>
+          )}
 
           <select
             value={settings.reminderMinutesBefore ?? ''}

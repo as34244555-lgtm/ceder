@@ -1,10 +1,6 @@
 /**
- * Namaz vakti girdiğinde çalınacak nazik bir uyarı melodisi.
- *
- * Telif hakkı içeren gerçek bir ezan kaydı yerleştirmek yerine, Web Audio API
- * ile kısa ve hoş bir "çan/nağme" tonu üretiyoruz. İsterseniz kendi ezan ses
- * dosyanızı `public/adhan.mp3` olarak ekleyip `playCustomAdhan` fonksiyonunu
- * kullanabilirsiniz.
+ * Namaz vakti girdiğinde çalınacak sesler: kısa sentetik bir nağme (Web Audio
+ * ile üretilir) veya CC0 lisanslı gerçek bir ezan kaydı (public/audio).
  */
 
 let audioContext: AudioContext | null = null;
@@ -76,27 +72,88 @@ export function primeAudio() {
   }
 }
 
-let adhanAudio: HTMLAudioElement | null = null;
+const ADHAN_FULL_SRC = '/audio/adhan-full.mp3';
+const ADHAN_PREVIEW_SRC = '/audio/adhan-preview.mp3';
 
-function getAdhanAudio(src: string): HTMLAudioElement {
+let adhanAudio: HTMLAudioElement | null = null;
+let adhanUnlocked = false;
+
+function ensureAdhanAudio(): HTMLAudioElement {
   if (!adhanAudio) {
-    adhanAudio = new Audio(src);
+    adhanAudio = new Audio();
     adhanAudio.preload = 'auto';
-  } else if (!adhanAudio.src.endsWith(src)) {
-    adhanAudio.src = src;
   }
   return adhanAudio;
 }
 
-/** Gerçek ezan kaydını (CC0 lisanslı) çalar. */
-export function playFullAdhan(preview = false) {
+/**
+ * Mobil tarayıcılarda (özellikle iOS Safari) `<audio>` elemanları, kullanıcı
+ * etkileşimi olmadan başlatılan oynatmaları engelleyebilir veya bir anlığına
+ * başlatıp hemen durdurabilir (bu da "sadece ilk kelimeyi duyma" hissi verir).
+ * Bu fonksiyon, kullanıcının uygulamadaki ilk dokunuşunda sessizce çağrılarak
+ * ses öğesini "kilidini açar"; böylece daha sonra bir ezan vakti otomatik
+ * olarak tetiklendiğinde oynatma güvenilir şekilde çalışır.
+ */
+export function unlockAdhanAudio() {
+  if (adhanUnlocked) return;
+  adhanUnlocked = true;
   try {
-    const audio = getAdhanAudio(preview ? '/audio/adhan-preview.mp3' : '/audio/adhan-full.mp3');
-    audio.currentTime = 0;
-    audio.volume = 1;
-    void audio.play();
+    const audio = ensureAdhanAudio();
+    audio.src = ADHAN_FULL_SRC;
+    audio.muted = true;
+    audio.volume = 0;
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+          audio.volume = 1;
+        })
+        .catch(() => {
+          adhanUnlocked = false;
+        });
+    }
   } catch {
-    // Otomatik oynatma engellenmiş olabilir; sessizce yoksay.
+    adhanUnlocked = false;
+  }
+}
+
+function setMediaSessionMetadata(title: string) {
+  if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title,
+      artist: 'Ezan Vakti',
+      album: 'Namaz Vakitleri',
+    });
+  } catch {
+    // Bazı tarayıcılar MediaMetadata'yı desteklemeyebilir.
+  }
+}
+
+/** Gerçek ezan kaydını (CC0 lisanslı) çalar; başarısız olursa kısa nağmeye düşer. */
+export function playFullAdhan(preview = false, title = 'Ezan') {
+  try {
+    const audio = ensureAdhanAudio();
+    const src = preview ? ADHAN_PREVIEW_SRC : ADHAN_FULL_SRC;
+    if (!audio.src.endsWith(src)) audio.src = src;
+    audio.muted = false;
+    audio.volume = 1;
+    audio.currentTime = 0;
+    setMediaSessionMetadata(title);
+
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        // Tarayıcı otomatik oynatmayı engelledi; en azından sentetik bir
+        // uyarı sesi çalarak kullanıcıyı vaktin girdiğinden haberdar et.
+        playPrayerChime();
+      });
+    }
+  } catch {
+    playPrayerChime();
   }
 }
 
