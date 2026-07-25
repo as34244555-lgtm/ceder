@@ -1,9 +1,7 @@
+import { DEFAULT_METHOD_ID } from '../data/methods';
 import type { DayPrayerTimes, PrayerKey, PrayerTime } from '../types';
 
 const BASE_URL = 'https://api.aladhan.com/v1';
-
-/** Diyanet İşleri Başkanlığı (Türkiye) hesaplama yöntemi. */
-const CALCULATION_METHOD = 13;
 
 const PRAYER_LABELS: Record<PrayerKey, string> = {
   imsak: 'İmsak',
@@ -27,17 +25,25 @@ interface AladhanTimings {
   [key: string]: string;
 }
 
+interface AladhanDate {
+  readable: string;
+  gregorian: { date: string; day: string; month: { number: number }; year: string };
+  hijri: { day: string; month: { en: string; number: number }; year: string };
+}
+
 interface AladhanResponse {
   code: number;
   status: string;
   data: {
     timings: AladhanTimings;
-    date: {
-      readable: string;
-      gregorian: { date: string; day: string; month: { number: number }; year: string };
-      hijri: { day: string; month: { en: string; number: number }; year: string };
-    };
+    date: AladhanDate;
   };
+}
+
+interface AladhanCalendarResponse {
+  code: number;
+  status: string;
+  data: { timings: AladhanTimings; date: AladhanDate }[];
 }
 
 class PrayerTimesError extends Error {}
@@ -52,12 +58,26 @@ function parseHM(time: string): { hours: number; minutes: number } {
   return { hours: h, minutes: m };
 }
 
-function buildDayFromResponse(json: AladhanResponse): DayPrayerTimes {
-  if (json.code !== 200 || !json.data) {
-    throw new PrayerTimesError('Namaz vakitleri alınamadı.');
-  }
+const HIJRI_MONTHS_TR: Record<string, string> = {
+  Muharram: 'Muharrem',
+  Safar: 'Safer',
+  "Rabi' al-awwal": 'Rebîülevvel',
+  "Rabi' al-thani": 'Rebîülâhir',
+  'Jumada al-awwal': 'Cemâziyelevvel',
+  'Jumada al-thani': 'Cemâziyelâhir',
+  Rajab: 'Recep',
+  Shaban: 'Şaban',
+  Ramadan: 'Ramazan',
+  Shawwal: 'Şevval',
+  "Dhu al-Qa'dah": 'Zilkade',
+  'Dhu al-Hijjah': 'Zilhicce',
+};
 
-  const { timings, date } = json.data;
+function translateHijriMonth(en: string): string {
+  return HIJRI_MONTHS_TR[en] ?? en;
+}
+
+function buildDayFromEntry(timings: AladhanTimings, date: AladhanDate): DayPrayerTimes {
   const [day, month, year] = date.gregorian.date.split('-').map(Number);
 
   const makeDate = (raw: string) => {
@@ -92,32 +112,16 @@ function buildDayFromResponse(json: AladhanResponse): DayPrayerTimes {
   };
 }
 
-const HIJRI_MONTHS_TR: Record<string, string> = {
-  Muharram: 'Muharrem',
-  Safar: 'Safer',
-  "Rabi' al-awwal": 'Rebîülevvel',
-  "Rabi' al-thani": 'Rebîülâhir',
-  'Jumada al-awwal': 'Cemâziyelevvel',
-  'Jumada al-thani': 'Cemâziyelâhir',
-  Rajab: 'Recep',
-  Shaban: 'Şaban',
-  Ramadan: 'Ramazan',
-  Shawwal: 'Şevval',
-  "Dhu al-Qa'dah": 'Zilkade',
-  'Dhu al-Hijjah': 'Zilhicce',
-};
-
-function translateHijriMonth(en: string): string {
-  return HIJRI_MONTHS_TR[en] ?? en;
-}
-
 async function fetchAladhan(url: string): Promise<DayPrayerTimes> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new PrayerTimesError(`Sunucu hatası: ${response.status}`);
   }
   const json = (await response.json()) as AladhanResponse;
-  return buildDayFromResponse(json);
+  if (json.code !== 200 || !json.data) {
+    throw new PrayerTimesError('Namaz vakitleri alınamadı.');
+  }
+  return buildDayFromEntry(json.data.timings, json.data.date);
 }
 
 function toDDMMYYYY(date: Date): string {
@@ -129,20 +133,23 @@ function toDDMMYYYY(date: Date): string {
 
 export async function fetchPrayerTimesByCity(
   city: string,
+  country: string = 'Turkey',
+  method: number = DEFAULT_METHOD_ID,
   date: Date = new Date(),
 ): Promise<DayPrayerTimes> {
   const url = `${BASE_URL}/timingsByCity/${toDDMMYYYY(date)}?city=${encodeURIComponent(
     city,
-  )}&country=Turkey&method=${CALCULATION_METHOD}`;
+  )}&country=${encodeURIComponent(country)}&method=${method}`;
   return fetchAladhan(url);
 }
 
 export async function fetchPrayerTimesByCoords(
   latitude: number,
   longitude: number,
+  method: number = DEFAULT_METHOD_ID,
   date: Date = new Date(),
 ): Promise<DayPrayerTimes> {
-  const url = `${BASE_URL}/timings/${toDDMMYYYY(date)}?latitude=${latitude}&longitude=${longitude}&method=${CALCULATION_METHOD}`;
+  const url = `${BASE_URL}/timings/${toDDMMYYYY(date)}?latitude=${latitude}&longitude=${longitude}&method=${method}`;
   return fetchAladhan(url);
 }
 
@@ -154,4 +161,36 @@ export async function fetchTodayAndTomorrow(
   tomorrow.setDate(now.getDate() + 1);
   const [today, tomorrowData] = await Promise.all([fetcher(now), fetcher(tomorrow)]);
   return { today, tomorrow: tomorrowData };
+}
+
+export async function fetchMonthlyCalendarByCity(
+  city: string,
+  country: string,
+  method: number,
+  year: number,
+  month: number,
+): Promise<DayPrayerTimes[]> {
+  const url = `${BASE_URL}/calendarByCity/${year}/${month}?city=${encodeURIComponent(
+    city,
+  )}&country=${encodeURIComponent(country)}&method=${method}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new PrayerTimesError(`Sunucu hatası: ${response.status}`);
+  const json = (await response.json()) as AladhanCalendarResponse;
+  if (json.code !== 200 || !json.data) throw new PrayerTimesError('Takvim alınamadı.');
+  return json.data.map((entry) => buildDayFromEntry(entry.timings, entry.date));
+}
+
+export async function fetchMonthlyCalendarByCoords(
+  latitude: number,
+  longitude: number,
+  method: number,
+  year: number,
+  month: number,
+): Promise<DayPrayerTimes[]> {
+  const url = `${BASE_URL}/calendar/${year}/${month}?latitude=${latitude}&longitude=${longitude}&method=${method}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new PrayerTimesError(`Sunucu hatası: ${response.status}`);
+  const json = (await response.json()) as AladhanCalendarResponse;
+  if (json.code !== 200 || !json.data) throw new PrayerTimesError('Takvim alınamadı.');
+  return json.data.map((entry) => buildDayFromEntry(entry.timings, entry.date));
 }

@@ -13,7 +13,7 @@ interface State {
   error: string | null;
 }
 
-export function usePrayerData(location: LocationInfo | null) {
+export function usePrayerData(location: LocationInfo | null, method: number) {
   const [state, setState] = useState<State>({
     today: null,
     tomorrow: null,
@@ -21,15 +21,15 @@ export function usePrayerData(location: LocationInfo | null) {
     error: null,
   });
   const lastFetchedDateRef = useRef<string | null>(null);
-  const lastLocationKeyRef = useRef<string | null>(null);
+  const lastKeyRef = useRef<string | null>(null);
 
-  const load = useCallback(async (loc: LocationInfo) => {
+  const load = useCallback(async (loc: LocationInfo, calcMethod: number) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const fetcher =
         loc.source === 'gps' && loc.latitude !== undefined && loc.longitude !== undefined
-          ? (date: Date) => fetchPrayerTimesByCoords(loc.latitude!, loc.longitude!, date)
-          : (date: Date) => fetchPrayerTimesByCity(loc.city, date);
+          ? (date: Date) => fetchPrayerTimesByCoords(loc.latitude!, loc.longitude!, calcMethod, date)
+          : (date: Date) => fetchPrayerTimesByCity(loc.city, loc.country, calcMethod, date);
 
       const { today, tomorrow } = await fetchTodayAndTomorrow(fetcher);
       lastFetchedDateRef.current = today.dateISO;
@@ -38,7 +38,8 @@ export function usePrayerData(location: LocationInfo | null) {
       setState((s) => ({
         ...s,
         loading: false,
-        error: 'Namaz vakitleri alınırken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+        error:
+          'Namaz vakitleri alınırken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       }));
     }
   }, []);
@@ -47,30 +48,29 @@ export function usePrayerData(location: LocationInfo | null) {
     if (!location) return;
     const key =
       location.source === 'gps'
-        ? `gps:${location.latitude?.toFixed(2)}:${location.longitude?.toFixed(2)}`
-        : `city:${location.city}`;
-    if (lastLocationKeyRef.current === key) return;
-    lastLocationKeyRef.current = key;
-    void load(location);
-  }, [location, load]);
+        ? `gps:${location.latitude?.toFixed(2)}:${location.longitude?.toFixed(2)}:${method}`
+        : `city:${location.city}:${location.country}:${method}`;
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
+    void load(location, method);
+  }, [location, method, load]);
 
-  // Gece yarısını geçince veriyi otomatik tazele.
   useEffect(() => {
     const id = setInterval(() => {
-      const todayISO = new Date();
-      const iso = `${todayISO.getFullYear()}-${String(todayISO.getMonth() + 1).padStart(2, '0')}-${String(
-        todayISO.getDate(),
+      const today = new Date();
+      const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
+        today.getDate(),
       ).padStart(2, '0')}`;
       if (location && lastFetchedDateRef.current && lastFetchedDateRef.current !== iso) {
-        void load(location);
+        void load(location, method);
       }
     }, 60 * 1000);
     return () => clearInterval(id);
-  }, [location, load]);
+  }, [location, method, load]);
 
   const refetch = useCallback(() => {
-    if (location) void load(location);
-  }, [location, load]);
+    if (location) void load(location, method);
+  }, [location, method, load]);
 
   return { ...state, refetch };
 }
