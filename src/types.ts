@@ -14,9 +14,17 @@ export interface PrayerTime {
   isAdhan: boolean;
 }
 
+export interface HijriDate {
+  day: number;
+  month: number;
+  monthLabel: string;
+  year: number;
+}
+
 export interface DayPrayerTimes {
   dateISO: string;
   hijriDate: string;
+  hijri: HijriDate;
   gregorianDateLabel: string;
   times: PrayerTime[];
 }

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useMonthlyCalendar } from '../hooks/useMonthlyCalendar';
 import { TURKISH_MONTHS } from '../data/turkishMonths';
+import { findOccasion } from '../data/islamicOccasions';
 import type { LocationInfo, TimeFormat } from '../types';
 import { formatTime } from '../utils/time';
 
@@ -55,10 +56,11 @@ export function MonthlyCalendar({ location, method, timeFormat }: MonthlyCalenda
 
       {!loading && !error && days.length > 0 && (
         <div className="glass-card rounded-2xl overflow-x-auto">
-          <table className="w-full text-sm min-w-[560px]">
+          <table className="w-full text-sm min-w-[680px]">
             <thead>
               <tr className="text-[var(--text-secondary)] text-xs uppercase tracking-wide border-b border-[var(--border-soft)]">
                 <th className="px-3 py-3 text-left font-medium">Gün</th>
+                <th className="px-3 py-3 text-left font-medium">Hicri</th>
                 <th className="px-3 py-3 text-center font-medium">İmsak</th>
                 <th className="px-3 py-3 text-center font-medium">Güneş</th>
                 <th className="px-3 py-3 text-center font-medium">Öğle</th>
@@ -76,11 +78,16 @@ export function MonthlyCalendar({ location, method, timeFormat }: MonthlyCalenda
                   day.times[0].date.getMonth(),
                   day.times[0].date.getDate(),
                 ).toLocaleDateString('tr-TR', { weekday: 'short' });
+                const occasion = findOccasion(day.hijri.month, day.hijri.day);
                 return (
                   <tr
                     key={day.dateISO}
                     className={`border-b border-[var(--border-soft)] last:border-0 ${
-                      isToday ? 'bg-gold-400/10' : ''
+                      isToday
+                        ? 'bg-gold-400/10'
+                        : occasion
+                          ? 'bg-[var(--accent-soft-bg)]'
+                          : ''
                     }`}
                   >
                     <td className="px-3 py-2.5 text-left whitespace-nowrap">
@@ -88,6 +95,10 @@ export function MonthlyCalendar({ location, method, timeFormat }: MonthlyCalenda
                         {dayNumber}
                       </span>{' '}
                       <span className="text-[var(--text-muted)] text-xs">{weekday}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-left whitespace-nowrap text-[var(--text-muted)] text-xs">
+                      {day.hijri.day} {day.hijri.monthLabel}
+                      {occasion && <span className="ml-1">{occasion.emoji}</span>}
                     </td>
                     {day.times.map((t) => (
                       <td

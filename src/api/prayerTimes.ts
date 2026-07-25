@@ -58,23 +58,29 @@ function parseHM(time: string): { hours: number; minutes: number } {
   return { hours: h, minutes: m };
 }
 
-const HIJRI_MONTHS_TR: Record<string, string> = {
-  Muharram: 'Muharrem',
-  Safar: 'Safer',
-  "Rabi' al-awwal": 'Rebîülevvel',
-  "Rabi' al-thani": 'Rebîülâhir',
-  'Jumada al-awwal': 'Cemâziyelevvel',
-  'Jumada al-thani': 'Cemâziyelâhir',
-  Rajab: 'Recep',
-  Shaban: 'Şaban',
-  Ramadan: 'Ramazan',
-  Shawwal: 'Şevval',
-  "Dhu al-Qa'dah": 'Zilkade',
-  'Dhu al-Hijjah': 'Zilhicce',
+/**
+ * Hicri ay adları, ay numarasına (1-12) göre çevrilir. Aladhan API'nin `en`
+ * alanı Arapça harf çevirisinde aksan işaretleri kullandığından (örn.
+ * "Muḥarram", "Shaʿbān") metin eşleştirmesi yerine güvenilir ay numarası
+ * kullanılır.
+ */
+const HIJRI_MONTHS_TR: Record<number, string> = {
+  1: 'Muharrem',
+  2: 'Safer',
+  3: 'Rebîülevvel',
+  4: 'Rebîülâhir',
+  5: 'Cemâziyelevvel',
+  6: 'Cemâziyelâhir',
+  7: 'Recep',
+  8: 'Şaban',
+  9: 'Ramazan',
+  10: 'Şevval',
+  11: 'Zilkade',
+  12: 'Zilhicce',
 };
 
-function translateHijriMonth(en: string): string {
-  return HIJRI_MONTHS_TR[en] ?? en;
+function translateHijriMonth(monthNumber: number): string {
+  return HIJRI_MONTHS_TR[monthNumber] ?? String(monthNumber);
 }
 
 function buildDayFromEntry(timings: AladhanTimings, date: AladhanDate): DayPrayerTimes {
@@ -102,11 +108,18 @@ function buildDayFromEntry(timings: AladhanTimings, date: AladhanDate): DayPraye
   }));
 
   const hijri = date.hijri;
-  const hijriDate = `${hijri.day} ${translateHijriMonth(hijri.month.en)} ${hijri.year}`;
+  const hijriMonthLabel = translateHijriMonth(hijri.month.number);
+  const hijriDate = `${hijri.day} ${hijriMonthLabel} ${hijri.year}`;
 
   return {
     dateISO: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
     hijriDate,
+    hijri: {
+      day: Number(hijri.day),
+      month: hijri.month.number,
+      monthLabel: hijriMonthLabel,
+      year: Number(hijri.year),
+    },
     gregorianDateLabel: date.readable,
     times,
   };
