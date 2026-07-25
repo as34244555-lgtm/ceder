@@ -1,3 +1,4 @@
+import { DEFAULT_METHOD_ID } from '../data/methods';
 import type { AppSettings } from '../types';
 
 const SETTINGS_KEY = 'ezan-app:settings';
@@ -7,6 +8,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   notificationsEnabled: false,
   reminderMinutesBefore: null,
+  calculationMethod: DEFAULT_METHOD_ID,
+  theme: 'dark',
+  timeFormat: '24',
+  adhanSoundMode: 'adhan',
 };
 
 export function loadSettings(): AppSettings {
@@ -38,6 +43,24 @@ export function loadSelectedCity(): string | null {
 export function saveSelectedCity(city: string) {
   try {
     localStorage.setItem(CITY_KEY, city);
+  } catch {
+    // yoksay
+  }
+}
+
+const COUNTRY_KEY = 'ezan-app:selected-country';
+
+export function loadSelectedCountry(): string | null {
+  try {
+    return localStorage.getItem(COUNTRY_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveSelectedCountry(country: string) {
+  try {
+    localStorage.setItem(COUNTRY_KEY, country);
   } catch {
     // yoksay
   }

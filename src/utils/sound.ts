@@ -75,3 +75,34 @@ export function primeAudio() {
     // yoksay
   }
 }
+
+let adhanAudio: HTMLAudioElement | null = null;
+
+function getAdhanAudio(src: string): HTMLAudioElement {
+  if (!adhanAudio) {
+    adhanAudio = new Audio(src);
+    adhanAudio.preload = 'auto';
+  } else if (!adhanAudio.src.endsWith(src)) {
+    adhanAudio.src = src;
+  }
+  return adhanAudio;
+}
+
+/** Gerçek ezan kaydını (CC0 lisanslı) çalar. */
+export function playFullAdhan(preview = false) {
+  try {
+    const audio = getAdhanAudio(preview ? '/audio/adhan-preview.mp3' : '/audio/adhan-full.mp3');
+    audio.currentTime = 0;
+    audio.volume = 1;
+    void audio.play();
+  } catch {
+    // Otomatik oynatma engellenmiş olabilir; sessizce yoksay.
+  }
+}
+
+export function stopFullAdhan() {
+  if (adhanAudio) {
+    adhanAudio.pause();
+    adhanAudio.currentTime = 0;
+  }
+}

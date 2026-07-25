@@ -1,12 +1,14 @@
-import type { PrayerTime } from '../types';
+import type { PrayerTime, TimeFormat } from '../types';
 import { PRAYER_ICONS } from './prayerIcons';
+import { formatTime } from '../utils/time';
 
 interface PrayerTimesListProps {
   times: PrayerTime[];
   currentKeyId: string | null;
+  timeFormat: TimeFormat;
 }
 
-export function PrayerTimesList({ times, currentKeyId }: PrayerTimesListProps) {
+export function PrayerTimesList({ times, currentKeyId, timeFormat }: PrayerTimesListProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 w-full">
       {times.map((time) => {
@@ -25,21 +27,21 @@ export function PrayerTimesList({ times, currentKeyId }: PrayerTimesListProps) {
             ].join(' ')}
           >
             <Icon
-              className={`h-5 w-5 ${isActive ? 'text-gold-300' : 'text-emerald-200/70'}`}
+              className={`h-5 w-5 ${isActive ? 'text-gold-300' : 'text-[var(--text-secondary)]'}`}
               strokeWidth={1.75}
             />
             <span
               className={`text-xs uppercase tracking-wide ${
-                isActive ? 'text-gold-200' : 'text-emerald-100/60'
+                isActive ? 'text-gold-200' : 'text-[var(--text-muted)]'
               }`}
             >
               {time.label}
             </span>
-            <span className={`text-lg font-semibold tabular-nums ${isActive ? 'text-white' : 'text-emerald-50'}`}>
-              {time.date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+            <span className={`text-lg font-semibold tabular-nums ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>
+              {formatTime(time.date, timeFormat)}
             </span>
             {!time.isAdhan && (
-              <span className="text-[10px] text-emerald-100/40">ezan okunmaz</span>
+              <span className="text-[10px] text-[var(--text-faint)]">ezan okunmaz</span>
             )}
           </div>
         );
