@@ -193,6 +193,38 @@ export async function fetchMonthlyCalendarByCity(
   return json.data.map((entry) => buildDayFromEntry(entry.timings, entry.date));
 }
 
+export async function fetchHijriMonthCalendarByCity(
+  city: string,
+  country: string,
+  method: number,
+  hijriYear: number,
+  hijriMonth: number,
+): Promise<DayPrayerTimes[]> {
+  const url = `${BASE_URL}/hijriCalendarByCity/${hijriYear}/${hijriMonth}?city=${encodeURIComponent(
+    city,
+  )}&country=${encodeURIComponent(country)}&method=${method}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new PrayerTimesError(`Sunucu hatası: ${response.status}`);
+  const json = (await response.json()) as AladhanCalendarResponse;
+  if (json.code !== 200 || !json.data) throw new PrayerTimesError('Hicri takvim alınamadı.');
+  return json.data.map((entry) => buildDayFromEntry(entry.timings, entry.date));
+}
+
+export async function fetchHijriMonthCalendarByCoords(
+  latitude: number,
+  longitude: number,
+  method: number,
+  hijriYear: number,
+  hijriMonth: number,
+): Promise<DayPrayerTimes[]> {
+  const url = `${BASE_URL}/hijriCalendar/${hijriYear}/${hijriMonth}?latitude=${latitude}&longitude=${longitude}&method=${method}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new PrayerTimesError(`Sunucu hatası: ${response.status}`);
+  const json = (await response.json()) as AladhanCalendarResponse;
+  if (json.code !== 200 || !json.data) throw new PrayerTimesError('Hicri takvim alınamadı.');
+  return json.data.map((entry) => buildDayFromEntry(entry.timings, entry.date));
+}
+
 export async function fetchMonthlyCalendarByCoords(
   latitude: number,
   longitude: number,
