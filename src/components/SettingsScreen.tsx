@@ -1,6 +1,7 @@
 import { Bell, BellOff, Volume2, VolumeX, Play, Moon, Sun, MonitorSmartphone } from 'lucide-react';
-import type { AppSettings, ThemeMode } from '../types';
+import type { AdhanSoundId, AppSettings, ThemeMode } from '../types';
 import { CALCULATION_METHODS } from '../data/methods';
+import { ADHAN_SOUNDS } from '../data/adhanSounds';
 import { playFullAdhan, playPrayerChime, primeAudio } from '../utils/sound';
 import { InstallPrompt } from './InstallPrompt';
 
@@ -11,12 +12,7 @@ interface SettingsScreenProps {
   onRequestNotificationPermission: () => void;
 }
 
-const REMINDER_OPTIONS: { value: number | null; label: string }[] = [
-  { value: null, label: 'Hatırlatma yok' },
-  { value: 5, label: '5 dakika önce' },
-  { value: 10, label: '10 dakika önce' },
-  { value: 15, label: '15 dakika önce' },
-];
+const REMINDER_OPTIONS = [5, 10, 15, 30, 45] as const;
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Moon }[] = [
   { value: 'dark', label: 'Koyu', icon: Moon },
@@ -50,10 +46,21 @@ export function SettingsScreen({
     onChange({ ...settings, notificationsEnabled: !settings.notificationsEnabled });
   };
 
+  const toggleReminder = (minutes: number) => {
+    const list = settings.reminderMinutesList ?? [];
+    const next = list.includes(minutes)
+      ? list.filter((m) => m !== minutes)
+      : [...list, minutes].sort((a, b) => a - b);
+    onChange({ ...settings, reminderMinutesList: next, reminderMinutesBefore: null });
+  };
+
   const handlePreview = () => {
     primeAudio();
-    if (settings.adhanSoundMode === 'adhan') playFullAdhan(true);
-    else playPrayerChime();
+    if (settings.adhanSoundMode === 'adhan') {
+      playFullAdhan(true, 'Ezan Önizleme', settings.adhanSoundId);
+    } else {
+      playPrayerChime();
+    }
   };
 
   return (
@@ -143,6 +150,28 @@ export function SettingsScreen({
             ))}
           </div>
 
+          {settings.adhanSoundMode === 'adhan' && (
+            <div className="flex gap-2">
+              {ADHAN_SOUNDS.map((sound) => (
+                <button
+                  key={sound.id}
+                  type="button"
+                  disabled={!settings.soundEnabled}
+                  onClick={() =>
+                    onChange({ ...settings, adhanSoundId: sound.id as AdhanSoundId })
+                  }
+                  className={`flex-1 rounded-xl py-2.5 text-xs font-medium transition disabled:opacity-40 ${
+                    settings.adhanSoundId === sound.id
+                      ? 'bg-gold-400/90 text-night-950'
+                      : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
+                  }`}
+                >
+                  {sound.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handlePreview}
@@ -154,28 +183,35 @@ export function SettingsScreen({
           </button>
           {settings.adhanSoundMode === 'adhan' && (
             <p className="text-[11px] text-[var(--text-muted)]">
-              Gerçek ezan vakti girdiğinde kaydın tamamı (~2.5 dk) çalınır; burada sadece kısa
-              bir önizleme dinlersiniz.
+              Gerçek ezan vakti girdiğinde kaydın tamamı çalınır; burada sadece kısa bir
+              önizleme dinlersiniz.
             </p>
           )}
+        </div>
+      </Section>
 
-          <select
-            value={settings.reminderMinutesBefore ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...settings,
-                reminderMinutesBefore: e.target.value === '' ? null : Number(e.target.value),
-              })
-            }
-            className="rounded-xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-2.5 text-sm text-[var(--text-secondary)] outline-none cursor-pointer [&>option]:text-black"
-            aria-label="Vakit öncesi hatırlatma"
-          >
-            {REMINDER_OPTIONS.map((opt) => (
-              <option key={opt.label} value={opt.value ?? ''}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+      <Section title="Vakit Öncesi Hatırlatmalar">
+        <p className="text-xs text-[var(--text-muted)]">
+          Birden fazla süre seçebilirsiniz. Seçili her eşikte ayrı hatırlatma gönderilir.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {REMINDER_OPTIONS.map((minutes) => {
+            const active = (settings.reminderMinutesList ?? []).includes(minutes);
+            return (
+              <button
+                key={minutes}
+                type="button"
+                onClick={() => toggleReminder(minutes)}
+                className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                  active
+                    ? 'bg-gold-400/90 text-night-950'
+                    : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
+                }`}
+              >
+                {minutes} dk önce
+              </button>
+            );
+          })}
         </div>
       </Section>
 
@@ -220,7 +256,8 @@ export function SettingsScreen({
         <InstallPrompt />
         <p className="text-xs text-[var(--text-muted)]">
           Bu uygulamayı ana ekranınıza ekleyerek, tıpkı bir mobil uygulama gibi tam ekran ve
-          çevrimdışı erişimle kullanabilirsiniz.
+          çevrimdışı erişimle kullanabilirsiniz. Play Store için Android paketleme adımları
+          README / PLAY_STORE.md dosyasında anlatılmıştır.
         </p>
       </Section>
     </div>

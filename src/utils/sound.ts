@@ -1,7 +1,9 @@
 /**
  * Namaz vakti girdiğinde çalınacak sesler: kısa sentetik bir nağme (Web Audio
- * ile üretilir) veya CC0 lisanslı gerçek bir ezan kaydı (public/audio).
+ * ile üretilir) veya CC0/CC-BY-SA lisanslı gerçek bir ezan kaydı (public/audio).
  */
+import { getAdhanSound } from '../data/adhanSounds';
+import type { AdhanSoundId } from '../types';
 
 let audioContext: AudioContext | null = null;
 
@@ -72,9 +74,6 @@ export function primeAudio() {
   }
 }
 
-const ADHAN_FULL_SRC = '/audio/adhan-full.mp3';
-const ADHAN_PREVIEW_SRC = '/audio/adhan-preview.mp3';
-
 let adhanAudio: HTMLAudioElement | null = null;
 let adhanUnlocked = false;
 
@@ -99,7 +98,7 @@ export function unlockAdhanAudio() {
   adhanUnlocked = true;
   try {
     const audio = ensureAdhanAudio();
-    audio.src = ADHAN_FULL_SRC;
+    audio.src = getAdhanSound('ses1').fullSrc;
     audio.muted = true;
     audio.volume = 0;
     const playPromise = audio.play();
@@ -133,11 +132,12 @@ function setMediaSessionMetadata(title: string) {
   }
 }
 
-/** Gerçek ezan kaydını (CC0 lisanslı) çalar; başarısız olursa kısa nağmeye düşer. */
-export function playFullAdhan(preview = false, title = 'Ezan') {
+/** Gerçek ezan kaydını çalar; başarısız olursa kısa nağmeye düşer. */
+export function playFullAdhan(preview = false, title = 'Ezan', soundId: AdhanSoundId = 'ses1') {
   try {
     const audio = ensureAdhanAudio();
-    const src = preview ? ADHAN_PREVIEW_SRC : ADHAN_FULL_SRC;
+    const sound = getAdhanSound(soundId);
+    const src = preview ? sound.previewSrc : sound.fullSrc;
     if (!audio.src.endsWith(src)) audio.src = src;
     audio.muted = false;
     audio.volume = 1;
