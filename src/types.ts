@@ -6,6 +6,9 @@ export type PrayerKey =
   | 'aksam'
   | 'yatsi';
 
+/** Takip/kaza gibi özelliklerde kullanılan, güneş hariç 5 vakit. */
+export type TrackablePrayerKey = 'imsak' | 'ogle' | 'ikindi' | 'aksam' | 'yatsi';
+
 export interface PrayerTime {
   key: PrayerKey;
   label: string;
@@ -38,18 +41,38 @@ export interface LocationInfo {
   source: 'gps' | 'city';
 }
 
+export interface FavoriteCity {
+  id: string;
+  city: string;
+  country: string;
+  label: string;
+}
+
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type TimeFormat = '24' | '12';
 export type AdhanSoundMode = 'chime' | 'adhan';
+export type AdhanSoundId = 'ses1' | 'ses2';
 
 export interface AppSettings {
   soundEnabled: boolean;
   notificationsEnabled: boolean;
-  reminderMinutesBefore: number | null;
+  /** @deprecated bkz. reminderMinutesList */
+  reminderMinutesBefore?: number | null;
+  reminderMinutesList: number[];
   calculationMethod: number;
   theme: ThemeMode;
   timeFormat: TimeFormat;
   adhanSoundMode: AdhanSoundMode;
+  adhanSoundId: AdhanSoundId;
 }
 
-export type TabId = 'home' | 'qibla' | 'calendar' | 'zikir' | 'settings';
+export type PrimaryTabId = 'home' | 'tracker' | 'qibla' | 'calendar' | 'more';
+export type SecondaryScreenId =
+  | 'zikir'
+  | 'esma'
+  | 'guide'
+  | 'ramadan'
+  | 'zakat'
+  | 'mosques'
+  | 'settings';
+export type TabId = PrimaryTabId | SecondaryScreenId;
