@@ -34,7 +34,7 @@ import { useRamadanCountdown } from './hooks/useRamadanCountdown';
 import { useFavoriteCities } from './hooks/useFavoriteCities';
 import { reverseGeocodeLabel } from './api/geocode';
 import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
-import { primeAudio, unlockAdhanAudio } from './utils/sound';
+import { primeAudio } from './utils/sound';
 import {
   loadSelectedCity,
   loadSelectedCountry,
@@ -92,13 +92,11 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
-  // Mobil tarayıcılarda (özellikle iOS) bir ezan vakti otomatik olarak sesi
-  // tetiklediğinde oynatmanın güvenilir çalışması için, kullanıcının
-  // uygulamadaki İLK dokunuşunda ses öğesinin kilidini sessizce açıyoruz.
+  // Mobil tarayıcılarda (özellikle iOS) otomatik ses için AudioContext kilidini
+  // kullanıcının uygulamadaki ilk dokunuşunda açıyoruz.
   useEffect(() => {
     const unlock = () => {
       primeAudio();
-      unlockAdhanAudio();
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
     };

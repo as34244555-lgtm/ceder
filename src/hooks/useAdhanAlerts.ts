@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { AppSettings, PrayerTime } from '../types';
-import { playFullAdhan, playPrayerChime, playReminderPing } from '../utils/sound';
+import { playPrayerChime, playReminderPing } from '../utils/sound';
 import { showPrayerNotification } from '../utils/notifications';
 
 /**
@@ -35,25 +35,13 @@ export function useAdhanAlerts(
     if (key !== lastCurrentKeyRef.current) {
       lastCurrentKeyRef.current = key;
       if (current.isAdhan) {
-        if (settings.soundEnabled) {
-          if (settings.adhanSoundMode === 'adhan') {
-            playFullAdhan(false, `${current.label} Ezanı`, settings.adhanSoundId);
-          } else {
-            playPrayerChime();
-          }
-        }
+        if (settings.soundEnabled) playPrayerChime();
         if (settings.notificationsEnabled) {
           showPrayerNotification(`${current.label} vakti girdi 🕌`, 'Vaktin hayırlı olsun.');
         }
       }
     }
-  }, [
-    current,
-    settings.soundEnabled,
-    settings.notificationsEnabled,
-    settings.adhanSoundMode,
-    settings.adhanSoundId,
-  ]);
+  }, [current, settings.soundEnabled, settings.notificationsEnabled]);
 
   useEffect(() => {
     const list = settings.reminderMinutesList ?? [];

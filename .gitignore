@@ -35,6 +35,7 @@ android/app/release
 *.keystore
 *.jks
 
-# Surge local auth
+# Surge / Netlify local auth
 .surge/
 .netrc
+.netlify/

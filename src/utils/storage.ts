@@ -11,21 +11,30 @@ export const DEFAULT_SETTINGS: AppSettings = {
   calculationMethod: DEFAULT_METHOD_ID,
   theme: 'dark',
   timeFormat: '24',
-  adhanSoundMode: 'adhan',
-  adhanSoundId: 'ses1',
 };
 
 export function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
+    const parsed = JSON.parse(raw) as Partial<AppSettings> & Record<string, unknown>;
     const merged = { ...DEFAULT_SETTINGS, ...parsed };
     // Eski tekil hatırlatma alanından yeni çoklu listeye geçiş.
     if (parsed.reminderMinutesBefore && merged.reminderMinutesList.length === 0) {
       merged.reminderMinutesList = [parsed.reminderMinutesBefore];
     }
-    return merged;
+    // Kaldırılan gerçek ezan sesi ayarlarını temizle.
+    delete (merged as Record<string, unknown>).adhanSoundMode;
+    delete (merged as Record<string, unknown>).adhanSoundId;
+    return {
+      soundEnabled: merged.soundEnabled,
+      notificationsEnabled: merged.notificationsEnabled,
+      reminderMinutesBefore: merged.reminderMinutesBefore,
+      reminderMinutesList: merged.reminderMinutesList,
+      calculationMethod: merged.calculationMethod,
+      theme: merged.theme,
+      timeFormat: merged.timeFormat,
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }

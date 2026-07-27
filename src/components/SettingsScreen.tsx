@@ -1,8 +1,7 @@
 import { Bell, BellOff, Volume2, VolumeX, Play, Moon, Sun, MonitorSmartphone } from 'lucide-react';
-import type { AdhanSoundId, AppSettings, ThemeMode } from '../types';
+import type { AppSettings, ThemeMode } from '../types';
 import { CALCULATION_METHODS } from '../data/methods';
-import { ADHAN_SOUNDS } from '../data/adhanSounds';
-import { playFullAdhan, playPrayerChime, primeAudio } from '../utils/sound';
+import { playPrayerChime, primeAudio } from '../utils/sound';
 import { InstallPrompt } from './InstallPrompt';
 
 interface SettingsScreenProps {
@@ -56,11 +55,7 @@ export function SettingsScreen({
 
   const handlePreview = () => {
     primeAudio();
-    if (settings.adhanSoundMode === 'adhan') {
-      playFullAdhan(true, 'Ezan Önizleme', settings.adhanSoundId);
-    } else {
-      playPrayerChime();
-    }
+    playPrayerChime();
   };
 
   return (
@@ -127,50 +122,9 @@ export function SettingsScreen({
             Ses {settings.soundEnabled ? 'Açık' : 'Kapalı'}
           </button>
 
-          <div className="flex gap-2">
-            {(
-              [
-                { value: 'adhan', label: 'Gerçek Ezan Sesi' },
-                { value: 'chime', label: 'Kısa Nağme' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange({ ...settings, adhanSoundMode: opt.value })}
-                disabled={!settings.soundEnabled}
-                className={`flex-1 rounded-xl py-2.5 text-xs font-medium transition disabled:opacity-40 ${
-                  settings.adhanSoundMode === opt.value
-                    ? 'bg-gold-400/90 text-night-950'
-                    : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {settings.adhanSoundMode === 'adhan' && (
-            <div className="flex gap-2">
-              {ADHAN_SOUNDS.map((sound) => (
-                <button
-                  key={sound.id}
-                  type="button"
-                  disabled={!settings.soundEnabled}
-                  onClick={() =>
-                    onChange({ ...settings, adhanSoundId: sound.id as AdhanSoundId })
-                  }
-                  className={`flex-1 rounded-xl py-2.5 text-xs font-medium transition disabled:opacity-40 ${
-                    settings.adhanSoundId === sound.id
-                      ? 'bg-gold-400/90 text-night-950'
-                      : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
-                  }`}
-                >
-                  {sound.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <p className="text-xs text-[var(--text-muted)]">
+            Vakit girdiğinde kısa bir uyarı nağmesi çalınır.
+          </p>
 
           <button
             type="button"
@@ -179,14 +133,8 @@ export function SettingsScreen({
             className="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-xs font-medium bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-soft-strong)] transition disabled:opacity-40 self-start"
           >
             <Play className="h-3.5 w-3.5" />
-            {settings.adhanSoundMode === 'adhan' ? 'Sesi önizle (kısa, 25 sn)' : 'Sesi önizle'}
+            Sesi önizle
           </button>
-          {settings.adhanSoundMode === 'adhan' && (
-            <p className="text-[11px] text-[var(--text-muted)]">
-              Gerçek ezan vakti girdiğinde kaydın tamamı çalınır; burada sadece kısa bir
-              önizleme dinlersiniz.
-            </p>
-          )}
         </div>
       </Section>
 

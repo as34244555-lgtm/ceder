@@ -10,7 +10,7 @@ Esmaü'l-Hüsna içeren; **PWA** olarak kurulan ve **Capacitor** ile Play Store'
 ### Namaz Vakitleri
 - Türkiye'nin 81 ili, GPS veya dünya genelinde şehir/ülke
 - Canlı geri sayım, ilerleme çubuğu, 6 vakit listesi
-- Gerçek ezan sesi (2 seçenek) veya kısa nağme; çoklu hatırlatma (5/10/15/30/45 dk)
+- Kısa uyarı nağmesi; çoklu hatırlatma (5/10/15/30/45 dk)
 - Kerahat vakti uyarısı
 - Favori şehirler, 14 hesaplama yöntemi, 12/24 saat, açık/koyu tema
 

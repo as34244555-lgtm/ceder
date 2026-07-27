@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png', 'audio/*.mp3'],
+      includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
         id: './',
         name: 'Ezan Vakti — Namaz Vakitleri',
@@ -37,7 +37,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,mp3}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.aladhan\.com\/.*/i,
@@ -55,14 +55,6 @@ export default defineConfig({
             options: {
               cacheName: 'geocode-cache',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
-          {
-            urlPattern: /audio\/.*\.mp3$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'adhan-audio-cache',
-              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
         ],

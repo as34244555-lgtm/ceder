@@ -50,8 +50,6 @@ export interface FavoriteCity {
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type TimeFormat = '24' | '12';
-export type AdhanSoundMode = 'chime' | 'adhan';
-export type AdhanSoundId = 'ses1' | 'ses2';
 
 export interface AppSettings {
   soundEnabled: boolean;
@@ -62,8 +60,6 @@ export interface AppSettings {
   calculationMethod: number;
   theme: ThemeMode;
   timeFormat: TimeFormat;
-  adhanSoundMode: AdhanSoundMode;
-  adhanSoundId: AdhanSoundId;
 }
 
 export type PrimaryTabId = 'home' | 'tracker' | 'qibla' | 'calendar' | 'more';
