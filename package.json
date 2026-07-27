@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "android:sync": "npm run cap:sync"
+    "android:sync": "npm run cap:sync",
+    "deploy:web": "npm run build && npx surge ./dist ezan-vakti.surge.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

@@ -60,4 +60,20 @@ Detaylar ve **“web sınırları .aab ile kalkar mı?”** cevabı: [PLAY_STORE
 
 React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capacitor 8 · Aladhan API · OpenStreetMap Overpass
 
+## Canlı site (kalıcı)
+
+**https://ezan-vakti.surge.sh**
+
+Yeniden yayınlamak için:
+
+```bash
+npm run build
+npx surge ./dist ezan-vakti.surge.sh
+```
+
+(Surge hesabı: `aakdniz935@gmail.com` — şifre sıfırlama: https://surge.sh)
+
+GitHub Pages yedek: `gh-pages` dalı hazır. Repo → Settings → Pages → Deploy from branch → `gh-pages` / `/` seçilince:
+`https://as34244555-lgtm.github.io/ceder/`
+
 Vaktin hayırlı olsun 🤲

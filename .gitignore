@@ -34,3 +34,7 @@ android/app/*.iml
 android/app/release
 *.keystore
 *.jks
+
+# Surge local auth
+.surge/
+.netrc

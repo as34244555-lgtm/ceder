@@ -7,18 +7,20 @@ export interface AdhanSoundOption {
   previewSrc: string;
 }
 
+const audioBase = `${import.meta.env.BASE_URL}audio/`;
+
 export const ADHAN_SOUNDS: AdhanSoundOption[] = [
   {
     id: 'ses1',
     label: 'Ses 1',
-    fullSrc: '/audio/adhan-full.mp3',
-    previewSrc: '/audio/adhan-preview.mp3',
+    fullSrc: `${audioBase}adhan-full.mp3`,
+    previewSrc: `${audioBase}adhan-preview.mp3`,
   },
   {
     id: 'ses2',
     label: 'Ses 2',
-    fullSrc: '/audio/adhan-2-full.mp3',
-    previewSrc: '/audio/adhan-2-preview.mp3',
+    fullSrc: `${audioBase}adhan-2-full.mp3`,
+    previewSrc: `${audioBase}adhan-2-preview.mp3`,
   },
 ];
 

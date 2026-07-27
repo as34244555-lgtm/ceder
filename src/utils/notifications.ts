@@ -14,7 +14,7 @@ export function showPrayerNotification(title: string, body: string) {
     // eslint-disable-next-line no-new
     new Notification(title, {
       body,
-      icon: '/favicon.svg',
+      icon: `${import.meta.env.BASE_URL}favicon.svg`,
       tag: `ezan-${title}-${new Date().toDateString()}`,
     });
   } catch {
