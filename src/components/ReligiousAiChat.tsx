@@ -11,18 +11,31 @@ const WELCOME: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Selamün aleyküm. Ben **Dini Asistan**ıyım — namaz, oruç, zekât, abdest ve benzeri konularda sorularınıza yardımcı olurum.\n\nCevaplarım genel bilgidir, **fetva değildir**. Özel durumunuz varsa müftülüğe danışın.\n\nAşağıdan bir soru seçebilir veya kendi sorunuzu yazabilirsiniz.',
+    'Selamün aleyküm. Ben **Dini Asistan**ıyım.\n\nSorularınızı **Suudi Arabistan İslam İşleri Bakanlığı** yayınlarından (İslam Evi / islamhouse.com) araştırıp hızlı ve kaynaklı cevaplarım. Resmi ifta kurumu: alifta.gov.sa\n\nCevaplar **fetva değildir**; özel durumunuzda müftülüğe danışın.\n\nAşağıdan bir soru seçin veya kendi sorunuzu yazın.',
 };
 
 function renderContent(text: string) {
-  // Çok hafif markdown: **kalın** ve satır sonları
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  // Hafif markdown: **kalın** + URL + satır sonları
+  const parts = text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s]+)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
         <strong key={i} className="font-semibold text-[var(--text-primary)]">
           {part.slice(2, -2)}
         </strong>
+      );
+    }
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline break-all text-gold-300/90 hover:text-gold-300"
+        >
+          {part}
+        </a>
       );
     }
     return <span key={i}>{part}</span>;
@@ -86,11 +99,11 @@ export function ReligiousAiChat() {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-[var(--text-primary)]">
-            Diğer uygulamalarda olmayan özellik
+            Suudi resmi yayınlardan araştırır
           </p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">
-            Dini sorularınızı yazın; yapay zeka Türkçe yanıtlasın. İlk soruda kısa bir ücretsiz
-            oturum onayı isteyebilir.
+            Cevaplar İslam Evi (islamhouse.com) üzerinden Suudi İslam İşleri Bakanlığı
+            materyallerinden hızlıca taranır; kaynak linkleri gösterilir.
           </p>
         </div>
         <button
@@ -137,7 +150,7 @@ export function ReligiousAiChat() {
         {loading && (
           <div className="flex gap-2.5 items-center text-xs text-[var(--text-muted)] pl-10">
             <Loader2 className="h-4 w-4 animate-spin text-gold-400" />
-            Düşünüyor…
+            İslam Evi kaynaklarında araştırılıyor…
           </div>
         )}
         <div ref={bottomRef} />

@@ -24,7 +24,7 @@ Esmaü'l-Hüsna içeren; **PWA** olarak kurulan ve **Capacitor** ile Play Store'
 - Ramazan modu: iftar/sahur geri sayımı, 30 günlük oruç takibi
 
 ### Daha menüsü
-- **Dini Asistan (Yapay Zeka):** dini sorulara Türkçe cevap
+- **Dini Asistan:** Suudi İslam İşleri Bakanlığı yayınları (İslam Evi) üzerinden hızlı, kaynaklı cevap
 - Zikir & dualar, Esmaü'l-Hüsna, namaz nasıl kılınır rehberi
 - Zekât & fitre hesaplama
 - Yakındaki camiler (OpenStreetMap)

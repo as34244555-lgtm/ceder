@@ -1,4 +1,9 @@
 import { matchReligiousFaq } from '../data/religiousFaq';
+import {
+  formatSaudiGroundedAnswer,
+  searchSaudiIslamicSources,
+  type SaudiSourceHit,
+} from './islamHouse';
 
 export interface ChatMessage {
   id: string;
@@ -9,16 +14,16 @@ export interface ChatMessage {
 export const RELIGIOUS_SYSTEM_PROMPT = `Sen "Ezan Vakti" uygulamasının Dini Asistanısın. Türkçe konuşursun.
 
 Kurallar:
-1. Yalnızca İslamî ilim, ibadet, ahlak, Kur’an-Hadis kültürü ve günlük dinî pratik hakkında yardım et.
+1. Yalnızca İslamî ilim, ibadet, ahlak, Kur’an-Hadis ve günlük dinî pratik hakkında yardım et.
 2. Cevapların kısa, net ve saygılı olsun. Gerekirse maddeler kullan.
-3. Ana çizgi olarak Ehl-i Sünnet / Diyanet İşleri Başkanlığı’na yakın, yaygın kabul gören bilgileri özetle. Mezhep farkı kritikse belirt.
-4. Her cevapta şunu unutturma: Bu bir yapay zeka özetidir; fetva değildir. Kişisel hüküm, şüpheli veya özel durumlarda müftülük / ehil bir âlime danışılmalıdır.
-5. Tıp, hukuk, siyaset, kehanet, büyü, tarikat tartışması veya İslam dışı inanç propagandası isteklerini nazikçe reddet.
-6. Ayet/hadis naklediyorsan mümkünse meal/kaynak belirt; uydurma rivayet uydurma.
-7. Kullanıcı selam verirse kısa selamla karşılık ver, ardından yardımcı ol.`;
+3. Sana verilen "Suudi kaynak özetleri" (İslam Evi / islamhouse.com — Suudi Arabistan İslam İşleri Bakanlığı yayını) varsa ÖNCE onlara dayan. Kaynak başlık ve linklerini belirt.
+4. Kaynak yoksa Ehl-i Sünnet çizgisinde genel bilgi ver; uydurma rivayet yazma.
+5. Her cevapta belirt: Bu bir özet/yardımcıdır; fetva değildir. Şüpheli veya kişisel durumlarda https://alifta.gov.sa veya yerel müftülüğe danışılmalıdır.
+6. Tıp, hukuk, siyaset, kehanet, büyü ve İslam dışı propaganda isteklerini reddet.
+7. Selamı kısa karşıla, sonra yardımcı ol.`;
 
 const DISCLAIMER =
-  '\n\nNot: Bu cevap yapay zeka destekli genel bilgidir; fetva yerine geçmez.';
+  '\n\nNot: Bu cevap yapay zeka / kaynak özetidir; fetva yerine geçmez. Resmi ifta: https://alifta.gov.sa';
 
 type PuterChatResult =
   | string
@@ -95,13 +100,32 @@ function extractText(result: PuterChatResult): string {
   return '';
 }
 
-async function askPuter(question: string, history: ChatMessage[]): Promise<string> {
+function buildSourceContext(hits: SaudiSourceHit[]): string {
+  if (hits.length === 0) return 'Suudi kaynak özeti bulunamadı.';
+  return hits
+    .slice(0, 5)
+    .map(
+      (h, i) =>
+        `${i + 1}. [${h.type}] ${h.title}\nÖzet: ${h.snippet || '(özet yok)'}\nLink: ${h.url}`,
+    )
+    .join('\n\n');
+}
+
+async function askPuter(
+  question: string,
+  history: ChatMessage[],
+  sourceContext: string,
+): Promise<string> {
   const puter = await loadPuter();
   const messages = [
     { role: 'system', content: RELIGIOUS_SYSTEM_PROMPT },
+    {
+      role: 'system',
+      content: `Suudi İslam İşleri Bakanlığı / İslam Evi araştırma sonuçları:\n${sourceContext}`,
+    },
     ...history
       .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .slice(-8)
+      .slice(-6)
       .map((m) => ({ role: m.role, content: m.content })),
     { role: 'user', content: question },
   ];
@@ -113,7 +137,6 @@ async function askPuter(question: string, history: ChatMessage[]): Promise<strin
       stream: false,
     });
   } catch {
-    // Model adı değişmiş olabilir; varsayılan modele düş.
     result = await puter.ai.chat(messages, { stream: false });
   }
 
@@ -122,19 +145,30 @@ async function askPuter(question: string, history: ChatMessage[]): Promise<strin
   return text.includes('fetva') ? text : `${text}${DISCLAIMER}`;
 }
 
-async function askGemini(question: string, history: ChatMessage[]): Promise<string> {
+async function askGemini(
+  question: string,
+  history: ChatMessage[],
+  sourceContext: string,
+): Promise<string> {
   const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
   if (!key) throw new Error('Gemini anahtarı yok');
 
   const contents = [
     ...history
       .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .slice(-8)
+      .slice(-6)
       .map((m) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       })),
-    { role: 'user', parts: [{ text: question }] },
+    {
+      role: 'user',
+      parts: [
+        {
+          text: `Kaynaklar:\n${sourceContext}\n\nSoru: ${question}`,
+        },
+      ],
+    },
   ];
 
   const response = await fetch(
@@ -145,7 +179,7 @@ async function askGemini(question: string, history: ChatMessage[]): Promise<stri
       body: JSON.stringify({
         system_instruction: { parts: [{ text: RELIGIOUS_SYSTEM_PROMPT }] },
         contents,
-        generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
       }),
     },
   );
@@ -162,37 +196,59 @@ async function askGemini(question: string, history: ChatMessage[]): Promise<stri
 function faqAnswer(question: string): string | null {
   const hit = matchReligiousFaq(question);
   if (!hit) return null;
-  return `${hit.answer}${DISCLAIMER}`;
+  return `${hit.answer}\n\nKaynak notu: Hızlı yerel özet. Daha ayrıntı için İslam Evi (islamhouse.com) ve https://alifta.gov.sa incelenebilir.${DISCLAIMER}`;
 }
 
+export type ReligiousAiSource = 'faq' | 'islamhouse' | 'gemini' | 'puter';
+
 /**
- * Önce isteğe bağlı Gemini anahtarı, sonra Puter (kullanıcı-ödemeli, ücretsiz entegrasyon),
- * olmazsa yerel SSS. Böylece anahtarsız da çalışır.
+ * Hız öncelikli akış (Suudi kaynak odaklı):
+ * 1) İslam Evi araması (~20–40 ms) — Suudi İslam İşleri Bakanlığı yayınları
+ * 2) Yerel SSS (anında yedek)
+ * 3) AI ile kaynaklara dayalı sentez (Gemini / Puter)
  */
 export async function askReligiousAi(
   question: string,
   history: ChatMessage[] = [],
-): Promise<{ answer: string; source: 'gemini' | 'puter' | 'faq' }> {
+): Promise<{ answer: string; source: ReligiousAiSource }> {
   const trimmed = question.trim();
   if (!trimmed) throw new Error('Soru boş');
 
+  // 1) Suudi İslam Evi araştırması (hızlı)
+  const { hits } = await searchSaudiIslamicSources(trimmed);
+  const grounded = formatSaudiGroundedAnswer(trimmed, hits);
+  const richEnough =
+    hits.some((h) => h.type === 'fatwa') ||
+    hits.filter((h) => h.snippet.length >= 40).length >= 1 ||
+    hits.length >= 2;
+
+  if (grounded && richEnough) {
+    return { answer: grounded, source: 'islamhouse' };
+  }
+
+  // 2) Yerel SSS yedeği
+  const local = faqAnswer(trimmed);
+  if (local) return { answer: local, source: 'faq' };
+
+  const sourceContext = buildSourceContext(hits);
+
+  // 3) AI sentezi (kaynak bağlamıyla)
   if (import.meta.env.VITE_GEMINI_API_KEY) {
     try {
-      const answer = await askGemini(trimmed, history);
+      const answer = await askGemini(trimmed, history, sourceContext);
       return { answer, source: 'gemini' };
     } catch {
-      // Diğer kanallara düş
+      // devam
     }
   }
 
   try {
-    const answer = await askPuter(trimmed, history);
+    const answer = await askPuter(trimmed, history, sourceContext);
     return { answer, source: 'puter' };
   } catch {
-    const local = faqAnswer(trimmed);
-    if (local) return { answer: local, source: 'faq' };
+    if (grounded) return { answer: grounded, source: 'islamhouse' };
     throw new Error(
-      'Yapay zeka şu an yanıt veremedi. İnternet bağlantınızı kontrol edin veya önerilen sorulardan birini deneyin. İlk kullanımda Puter oturum penceresini onaylamanız gerekebilir.',
+      'Kaynaklara ulaşılamadı. İnterneti kontrol edin veya önerilen sorulardan birini deneyin.',
     );
   }
 }
