@@ -1,4 +1,5 @@
 import {
+  MessageCircleQuestion,
   Sparkles,
   BookOpenText,
   GraduationCap,
@@ -23,6 +24,13 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
     icon: typeof Sparkles;
     badge?: string;
   }[] = [
+    {
+      id: 'assistant',
+      label: 'Dini Asistan',
+      description: 'Dini sorularınıza yapay zeka ile cevap',
+      icon: MessageCircleQuestion,
+      badge: 'Yeni',
+    },
     {
       id: 'zikir',
       label: 'Zikir & Dualar',

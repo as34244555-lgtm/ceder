@@ -23,6 +23,8 @@ import { EsmaulHusnaList } from './components/EsmaulHusnaList';
 import { PrayerGuideScreen } from './components/PrayerGuideScreen';
 import { OccasionBanner } from './components/OccasionBanner';
 import { DailyWisdomCard } from './components/DailyWisdomCard';
+import { ReligiousAiChat } from './components/ReligiousAiChat';
+import { ReligiousAiPromo } from './components/ReligiousAiPromo';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useNow } from './hooks/useNow';
 import { usePrayerData } from './hooks/usePrayerData';
@@ -49,6 +51,7 @@ const DEFAULT_CITY = 'İstanbul';
 const DEFAULT_COUNTRY = 'Turkey';
 
 const SECONDARY_TITLES: Record<SecondaryScreenId, string> = {
+  assistant: 'Dini Asistan',
   zikir: 'Zikir & Dualar',
   esma: "Esmaü'l-Hüsna",
   guide: 'Namaz Nasıl Kılınır?',
@@ -221,6 +224,8 @@ function App() {
             )}
 
             <DailyWisdomCard />
+
+            <ReligiousAiPromo onOpen={() => setActiveTab('assistant')} />
           </>
         )}
 
@@ -240,6 +245,7 @@ function App() {
           <MoreMenu onNavigate={handleSecondaryNav} isRamadan={Boolean(isRamadan)} />
         )}
 
+        {activeTab === 'assistant' && <ReligiousAiChat />}
         {activeTab === 'zikir' && <ZikirTab />}
         {activeTab === 'esma' && <EsmaulHusnaList />}
         {activeTab === 'guide' && <PrayerGuideScreen />}

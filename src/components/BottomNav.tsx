@@ -14,7 +14,16 @@ const TABS: { id: PrimaryTabId; label: string; icon: typeof Clock }[] = [
   { id: 'more', label: 'Daha', icon: Grid2x2 },
 ];
 
-const SECONDARY_SCREENS: TabId[] = ['zikir', 'esma', 'guide', 'ramadan', 'zakat', 'mosques', 'settings'];
+const SECONDARY_SCREENS: TabId[] = [
+  'assistant',
+  'zikir',
+  'esma',
+  'guide',
+  'ramadan',
+  'zakat',
+  'mosques',
+  'settings',
+];
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
   const effectiveActive: PrimaryTabId = SECONDARY_SCREENS.includes(active)
