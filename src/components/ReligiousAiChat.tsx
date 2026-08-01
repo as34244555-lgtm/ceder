@@ -5,19 +5,20 @@ import {
   createMessageId,
   type ChatMessage,
 } from '../api/religiousAi';
-import { SUGGESTED_QUESTIONS } from '../data/religiousFaq';
+import { matchReligiousFaq, SUGGESTED_QUESTIONS } from '../data/religiousFaq';
 
 const WELCOME: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Selamün aleyküm. Ben **Dini Asistan**ıyım.\n\nSorunuzu yazın; **İslam Evi** (Suudi İslam İşleri Bakanlığı yayınları) üzerinden araştırıp kaynaklı cevaplarım. Üyelik / kayıt istemez.\n\nCevaplar **fetva değildir**. Resmi ifta: alifta.gov.sa',
+    'Selamün aleyküm. Ben **Dini Asistan**ım.\n\nAbdest, namaz, oruç, zekât, gusül gibi sorularınıza **hemen** cevap veririm. İsterseniz İslam Evi kaynak linklerini de eklerim.\n\nAşağıdan hazır soru seçin veya kendi sorunuzu yazın.',
 };
 
 function renderContent(text: string) {
-  // Hafif markdown: **kalın** + URL + satır sonları
-  const parts = text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s]+)/g);
+  const cleaned = text.replace(/_([^_\n]+)_/g, '$1');
+  const parts = cleaned.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s]+)/g);
   return parts.map((part, i) => {
+    if (!part) return null;
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
         <strong key={i} className="font-semibold text-[var(--text-primary)]">
@@ -65,30 +66,58 @@ export function ReligiousAiChat() {
       role: 'user',
       content: question,
     };
-    const history = [...messages, userMsg].filter((m) => m.id !== 'welcome');
     setMessages((prev) => [...prev, userMsg]);
-    setLoading(true);
 
+    // Yerel SSS varsa anında göster (kullanıcı beklemesin)
+    const instant = matchReligiousFaq(question);
+    if (instant) {
+      const instantId = createMessageId();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: instantId,
+          role: 'assistant',
+          content: `${instant.answer}\n\n_Kaynaklar kontrol ediliyor…_`,
+        },
+      ]);
+      setLoading(true);
+      try {
+        const { answer } = await askReligiousAi(question);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === instantId ? { ...m, content: answer } : m)),
+        );
+      } catch (err) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === instantId
+              ? {
+                  ...m,
+                  content: `${instant.answer}\n\n_Not: Genel bilgidir; fetva değildir._`,
+                }
+              : m,
+          ),
+        );
+        setError(err instanceof Error ? err.message : 'Ek kaynak alınamadı');
+      } finally {
+        setLoading(false);
+        inputRef.current?.focus();
+      }
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { answer } = await askReligiousAi(question, history);
+      const { answer } = await askReligiousAi(question);
       setMessages((prev) => [
         ...prev,
         { id: createMessageId(), role: 'assistant', content: answer },
       ]);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Yanıt alınamadı. Lütfen tekrar deneyin.';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Yanıt alınamadı');
     } finally {
       setLoading(false);
       inputRef.current?.focus();
     }
-  };
-
-  const clearChat = () => {
-    setMessages([WELCOME]);
-    setError(null);
-    setInput('');
   };
 
   return (
@@ -98,20 +127,20 @@ export function ReligiousAiChat() {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-[var(--text-primary)]">
-            Suudi resmi yayınlardan araştırır
-          </p>
+          <p className="text-sm font-medium text-[var(--text-primary)]">Anında cevap + kaynak</p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">
-            İslam Evi’nde Türkçe fetva/makale tarar, alakasız sonuçları eler. Kayıt veya üyelik
-            gerekmez.
+            Önce hemen cevaplanır; varsa İslam Evi linkleri eklenir. Kayıt gerekmez.
           </p>
         </div>
         <button
           type="button"
-          onClick={clearChat}
+          onClick={() => {
+            setMessages([WELCOME]);
+            setError(null);
+            setInput('');
+          }}
           className="shrink-0 rounded-lg p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-soft)] transition"
           aria-label="Sohbeti temizle"
-          title="Sohbeti temizle"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -150,7 +179,7 @@ export function ReligiousAiChat() {
         {loading && (
           <div className="flex gap-2.5 items-center text-xs text-[var(--text-muted)] pl-10">
             <Loader2 className="h-4 w-4 animate-spin text-gold-400" />
-            Cevap hazırlanıyor…
+            Kaynaklar kontrol ediliyor…
           </div>
         )}
         <div ref={bottomRef} />
@@ -162,7 +191,7 @@ export function ReligiousAiChat() {
         </p>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {SUGGESTED_QUESTIONS.map((q) => (
           <button
             key={q}
@@ -194,7 +223,7 @@ export function ReligiousAiChat() {
             }
           }}
           rows={2}
-          placeholder="Dini sorunuzu yazın…"
+          placeholder="Örn: abdest nasıl alınır?"
           disabled={loading}
           className="flex-1 resize-none rounded-2xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none focus:border-gold-400/50 disabled:opacity-50"
         />

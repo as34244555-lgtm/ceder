@@ -8,31 +8,35 @@ export interface ChatMessage {
 }
 
 const DISCLAIMER =
-  '\n\nNot: Bu cevap genel bilgidir; fetva yerine geçmez. Resmi ifta: https://alifta.gov.sa';
-
-const GREETING_RE =
-  /^(selam|selamun|selamün|selamu|asü|asu|merhaba|iyi günler|hayırlı)/i;
+  '\n\n_Not: Genel bilgidir; fetva değildir. https://alifta.gov.sa_';
 
 function isGreeting(text: string): boolean {
   const t = text.trim();
-  if (t.length > 40) return false;
-  return GREETING_RE.test(t);
-}
-
-function faqAnswer(question: string): string | null {
-  const hit = matchReligiousFaq(question);
-  if (!hit) return null;
-  return `${hit.answer}${DISCLAIMER}`;
+  if (t.length > 48) return false;
+  return /^(selam|selamun|selamün|selamu|asü|asu|merhaba|iyi günler|hayırlı)/i.test(t);
 }
 
 export type ReligiousAiSource = 'faq' | 'islamhouse' | 'faq+islamhouse' | 'greeting' | 'none';
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        resolve(null);
+      });
+  });
+}
+
 /**
- * 1) Selam
- * 2) Yerel SSS (her zaman çalışır)
- * 3) İslam Evi kaynak linkleri (varsa eklenir)
- * 4) Sadece İslam Evi
- * 5) Bulunamadı
+ * Önce yerel SSS ile ANINDA cevap.
+ * İslam Evi en fazla ~2.5 sn denenir; gelirse kaynak eklenir.
+ * Ağ olmasa da SSS cevabı çalışır.
  */
 export async function askReligiousAi(
   question: string,
@@ -44,36 +48,43 @@ export async function askReligiousAi(
   if (isGreeting(trimmed)) {
     return {
       answer:
-        'Aleykümselam. Sorunuzu yazın — önce hızlı cevap verir, ardından İslam Evi’nden kaynak linkleri eklerim.',
+        'Aleykümselam. Sorunuzu yazın — hemen cevaplarım (abdest, namaz, oruç, zekât, gusül…).',
       source: 'greeting',
     };
   }
 
-  const local = faqAnswer(trimmed);
+  const faq = matchReligiousFaq(trimmed);
+  const local = faq ? `${faq.answer}${DISCLAIMER}` : null;
 
-  // İslam Evi'ni dene; başarısız olsa bile yerel cevap varsa onu göster
-  let grounded: string | null = null;
-  try {
-    const { hits } = await searchSaudiIslamicSources(trimmed);
-    grounded = formatSaudiGroundedAnswer(trimmed, hits);
-  } catch {
-    grounded = null;
+  // Yerel cevap varsa İslam Evi'ni bekletmeden döndür (kaynak için kısa dene)
+  if (local) {
+    const remote = await withTimeout(
+      searchSaudiIslamicSources(trimmed).then((r) =>
+        formatSaudiGroundedAnswer(trimmed, r.hits),
+      ),
+      2200,
+    );
+    if (remote) {
+      return { answer: `${local}\n\n---\n\n${remote}`, source: 'faq+islamhouse' };
+    }
+    return { answer: local, source: 'faq' };
   }
 
-  if (local && grounded) {
-    return {
-      answer: `${local}\n\n---\n\n${grounded}`,
-      source: 'faq+islamhouse',
-    };
-  }
-  if (local) return { answer: local, source: 'faq' };
-  if (grounded) return { answer: grounded, source: 'islamhouse' };
+  // SSS yoksa İslam Evi'ni dene
+  const remote = await withTimeout(
+    searchSaudiIslamicSources(trimmed).then((r) => formatSaudiGroundedAnswer(trimmed, r.hits)),
+    2800,
+  );
+  if (remote) return { answer: remote, source: 'islamhouse' };
 
   return {
     answer:
-      `“${trimmed}” için henüz net bir cevap bulamadım.\n\n` +
-      'Daha iyi sonuç için kısa yazın: örn. **abdest**, **oruç diş macunu**, **teravih rekat**, **namaz kaza**.\n\n' +
-      'Hazır sorulardan birini de seçebilirsiniz. Resmi ifta: https://alifta.gov.sa',
+      `“${trimmed}” için hazır cevabım yok.\n\n` +
+      'Şunu dene:\n' +
+      '• **abdest** / **gusül** / **namaz farzları**\n' +
+      '• **oruç** / **diş macunu**\n' +
+      '• **zekât** / **kaza namaz** / **teravih**\n' +
+      '• veya aşağıdaki hazır sorulardan birini seç',
     source: 'none',
   };
 }

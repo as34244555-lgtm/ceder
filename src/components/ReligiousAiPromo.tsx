@@ -24,7 +24,7 @@ export function ReligiousAiPromo({ onOpen }: ReligiousAiPromoProps) {
             </span>
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Namaz, oruç, zekât… Suudi resmi yayınlardan hızlı cevap.
+            Abdest, namaz, oruç… sor, hemen cevap alsın.
           </p>
         </div>
       </div>

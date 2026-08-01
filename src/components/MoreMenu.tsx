@@ -27,7 +27,7 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
     {
       id: 'assistant',
       label: 'Dini Asistan',
-      description: 'Suudi İslam İşleri yayınlarından hızlı cevap',
+      description: 'Dini sorulara anında cevap',
       icon: MessageCircleQuestion,
       badge: 'Yeni',
     },
