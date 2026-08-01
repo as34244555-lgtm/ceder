@@ -11,7 +11,7 @@ const WELCOME: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Selamün aleyküm. Ben **Dini Asistan**ıyım.\n\nSorularınızı **Suudi Arabistan İslam İşleri Bakanlığı** yayınlarından (İslam Evi / islamhouse.com) araştırıp hızlı ve kaynaklı cevaplarım. Resmi ifta kurumu: alifta.gov.sa\n\nCevaplar **fetva değildir**; özel durumunuzda müftülüğe danışın.\n\nAşağıdan bir soru seçin veya kendi sorunuzu yazın.',
+    'Selamün aleyküm. Ben **Dini Asistan**ıyım.\n\nSorunuzu yazın; **İslam Evi** (Suudi İslam İşleri Bakanlığı yayınları) üzerinden araştırıp kaynaklı cevaplarım. Üyelik / kayıt istemez.\n\nCevaplar **fetva değildir**. Resmi ifta: alifta.gov.sa',
 };
 
 function renderContent(text: string) {
@@ -102,8 +102,8 @@ export function ReligiousAiChat() {
             Suudi resmi yayınlardan araştırır
           </p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">
-            Cevaplar İslam Evi (islamhouse.com) üzerinden Suudi İslam İşleri Bakanlığı
-            materyallerinden hızlıca taranır; kaynak linkleri gösterilir.
+            İslam Evi’nde Türkçe fetva/makale tarar, alakasız sonuçları eler. Kayıt veya üyelik
+            gerekmez.
           </p>
         </div>
         <button

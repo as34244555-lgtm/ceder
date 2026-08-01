@@ -73,10 +73,32 @@ export const RELIGIOUS_FAQ: ReligiousFaqEntry[] = [
   },
   {
     id: 'kaza',
-    keywords: ['kaza', 'kaçırılan namaz', 'borç namaz'],
+    keywords: [
+      'kaza',
+      'kaçırılan namaz',
+      'kaçırınca',
+      'kacirinca',
+      'borç namaz',
+      'sabah namazını kaçır',
+      'vakti geçen',
+    ],
     question: 'Kaçırılan namaz nasıl kılınır?',
     answer:
       'Vaktinde kılınamayan farz namazlar kaza edilir. Kaza ederken “kazaya kalan … namazını kılmaya” diye niyet edilir. Çok borç birikmişse planlı şekilde kaza etmek önerilir. Uygulamadaki Namazlarım sekmesinde kaza sayacı vardır.',
+  },
+  {
+    id: 'dis-macunu-oruc',
+    keywords: ['diş macunu', 'dis macunu', 'macun', 'misvak oruç', 'oruçlu diş'],
+    question: 'Oruçluyken diş macunu kullanılır mı?',
+    answer:
+      'Âlimlerin çoğuna göre diş macunu yutulmadığı sürece orucu bozmaz; yine de macunun boğaza kaçmamasına dikkat edilir. Şüphede kalanlar iftara kadar bekleyebilir veya misvak kullanabilir. Ayrıntılı hüküm için İslam Evi’ndeki ilgili fetvalara bakılabilir.',
+  },
+  {
+    id: 'kible-bilememe',
+    keywords: ['kıbleyi bilemez', 'kibleyi bilemez', 'kıble şüphe', 'yön bilmiyorum'],
+    question: 'Kıbleyi bilemezsem namazım olur mu?',
+    answer:
+      'Kıbleyi araştırıp gücünüz yettiğince doğru yöne dönmeniz gerekir. Araştırma sonrası içtihadınızla kıldığınız namaz, sonra yönün yanlış çıktığı anlaşılsa bile birçok görüşe göre iade gerekmez. Camideki kıble işaretine veya uygulamadaki Kıble sekmesine bakabilirsiniz.',
   },
   {
     id: 'esma',
