@@ -5,13 +5,13 @@ import {
   createMessageId,
   type ChatMessage,
 } from '../api/religiousAi';
-import { matchReligiousFaq, SUGGESTED_QUESTIONS } from '../data/religiousFaq';
+import { SUGGESTED_QUESTIONS } from '../data/religiousFaq';
 
 const WELCOME: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   content:
-    'Selamün aleyküm. Ben **Dini Asistan**ım.\n\nAbdest, namaz, oruç, zekât, gusül gibi sorularınıza **hemen** cevap veririm. İsterseniz İslam Evi kaynak linklerini de eklerim.\n\nAşağıdan hazır soru seçin veya kendi sorunuzu yazın.',
+    'Selamün aleyküm. Ben **Dini Asistan**ım.\n\nSorunuzun **aynısını** güvenilir sitelerde araştırırım (Diyanet, İslam Evi, Sorularla İslamiyet, Fetva.net, Dinimiz İslam).\n\nHazır soru seçin veya kendi sorunuzu yazın — kayıt gerekmez.',
 };
 
 function renderContent(text: string) {
@@ -67,45 +67,8 @@ export function ReligiousAiChat() {
       content: question,
     };
     setMessages((prev) => [...prev, userMsg]);
-
-    // Yerel SSS varsa anında göster (kullanıcı beklemesin)
-    const instant = matchReligiousFaq(question);
-    if (instant) {
-      const instantId = createMessageId();
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: instantId,
-          role: 'assistant',
-          content: `${instant.answer}\n\n_Kaynaklar kontrol ediliyor…_`,
-        },
-      ]);
-      setLoading(true);
-      try {
-        const { answer } = await askReligiousAi(question);
-        setMessages((prev) =>
-          prev.map((m) => (m.id === instantId ? { ...m, content: answer } : m)),
-        );
-      } catch (err) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === instantId
-              ? {
-                  ...m,
-                  content: `${instant.answer}\n\n_Not: Genel bilgidir; fetva değildir._`,
-                }
-              : m,
-          ),
-        );
-        setError(err instanceof Error ? err.message : 'Ek kaynak alınamadı');
-      } finally {
-        setLoading(false);
-        inputRef.current?.focus();
-      }
-      return;
-    }
-
     setLoading(true);
+
     try {
       const { answer } = await askReligiousAi(question);
       setMessages((prev) => [
@@ -113,7 +76,7 @@ export function ReligiousAiChat() {
         { id: createMessageId(), role: 'assistant', content: answer },
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Yanıt alınamadı');
+      setError(err instanceof Error ? err.message : 'Araştırma yapılamadı');
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -127,9 +90,10 @@ export function ReligiousAiChat() {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-[var(--text-primary)]">Anında cevap + kaynak</p>
+          <p className="text-sm font-medium text-[var(--text-primary)]">İnternet araştırması</p>
           <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-relaxed">
-            Önce hemen cevaplanır; varsa İslam Evi linkleri eklenir. Kayıt gerekmez.
+            Sorunuzun aynısı güvenilir İslami sitelerde aranır; başlık, özet ve kaynak linkleri
+            gösterilir.
           </p>
         </div>
         <button
@@ -179,7 +143,7 @@ export function ReligiousAiChat() {
         {loading && (
           <div className="flex gap-2.5 items-center text-xs text-[var(--text-muted)] pl-10">
             <Loader2 className="h-4 w-4 animate-spin text-gold-400" />
-            Kaynaklar kontrol ediliyor…
+            Güvenilir sitelerde araştırılıyor…
           </div>
         )}
         <div ref={bottomRef} />
@@ -223,7 +187,7 @@ export function ReligiousAiChat() {
             }
           }}
           rows={2}
-          placeholder="Örn: abdest nasıl alınır?"
+          placeholder="Sorunuzu yazın — internette araştırılır…"
           disabled={loading}
           className="flex-1 resize-none rounded-2xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] outline-none focus:border-gold-400/50 disabled:opacity-50"
         />

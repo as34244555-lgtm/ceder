@@ -20,11 +20,11 @@ export function ReligiousAiPromo({ onOpen }: ReligiousAiPromoProps) {
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Dini Asistan</p>
             <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gold-400/20 text-gold-300 font-medium">
-              Yapay Zeka
+              Araştır
             </span>
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Abdest, namaz, oruç… sor, hemen cevap alsın.
+            Sorunuzu güvenilir sitelerde araştırır, kaynak linklerini gösterir.
           </p>
         </div>
       </div>

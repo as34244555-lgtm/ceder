@@ -1,5 +1,6 @@
 import { matchReligiousFaq } from '../data/religiousFaq';
-import { formatSaudiGroundedAnswer, searchSaudiIslamicSources } from './islamHouse';
+import { searchIslamHouseExact } from './islamHouse';
+import { formatResearchAnswer, searchTrustedWeb, type ResearchHit } from './webResearch';
 
 export interface ChatMessage {
   id: string;
@@ -7,35 +8,30 @@ export interface ChatMessage {
   content: string;
 }
 
-const DISCLAIMER =
-  '\n\nNot: Genel bilgidir; fetva değildir. https://alifta.gov.sa';
-
 function isGreeting(text: string): boolean {
   const t = text.trim();
   if (t.length > 48) return false;
   return /^(selam|selamun|selamün|selamu|asü|asu|merhaba|iyi günler|hayırlı)/i.test(t);
 }
 
-export type ReligiousAiSource = 'faq' | 'islamhouse' | 'faq+islamhouse' | 'greeting' | 'none';
+export type ReligiousAiSource = 'web' | 'web+faq' | 'faq' | 'greeting' | 'none';
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), ms);
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch(() => {
-        clearTimeout(timer);
-        resolve(null);
-      });
-  });
+function dedupeHits(hits: ResearchHit[]): ResearchHit[] {
+  const seen = new Set<string>();
+  const out: ResearchHit[] = [];
+  for (const hit of hits) {
+    const key = hit.url.replace(/\/$/, '').toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(hit);
+  }
+  return out;
 }
 
 /**
- * Serbest yazılan sorularda önce konu eşleştirmesi (anında),
- * sonra isteğe bağlı İslam Evi kaynakları.
+ * Sorunun aynısını güvenilir sitelerde araştırır:
+ * - İslam Evi (doğrudan API)
+ * - Diyanet / Sorularla İslamiyet / Fetva.net / Dinimiz İslam vb. (web araması)
  */
 export async function askReligiousAi(
   question: string,
@@ -47,39 +43,45 @@ export async function askReligiousAi(
   if (isGreeting(trimmed)) {
     return {
       answer:
-        'Aleykümselam. Sorunuzu kendi cümlelerinizle yazın — örneğin “abdesti nasıl alırım?”, “oruçta diş macunu olur mu?”',
+        'Aleykümselam. Sorunuzu kendi cümlelerinizle yazın — sorunun aynısını güvenilir sitelerde araştırırım.',
       source: 'greeting',
     };
   }
 
-  const faq = matchReligiousFaq(trimmed);
-  const local = faq ? `${faq.answer}${DISCLAIMER}` : null;
+  const [islamHouseHits, webHits] = await Promise.all([
+    searchIslamHouseExact(trimmed),
+    searchTrustedWeb(trimmed),
+  ]);
 
-  if (local) {
-    const remote = await withTimeout(
-      searchSaudiIslamicSources(trimmed).then((r) =>
-        formatSaudiGroundedAnswer(trimmed, r.hits),
-      ),
-      2000,
-    );
-    if (remote) {
-      return { answer: `${local}\n\n---\n\n${remote}`, source: 'faq+islamhouse' };
-    }
-    return { answer: local, source: 'faq' };
+  // Önce web (çeşitli güvenilir siteler), sonra İslam Evi — tekrarları ayıkla
+  const hits = dedupeHits([...webHits, ...islamHouseHits]).slice(0, 6);
+  const faq = matchReligiousFaq(trimmed);
+
+  if (hits.length > 0) {
+    const faqNote = faq
+      ? `Kısa özet: ${faq.answer.split('\n')[0]?.slice(0, 220) ?? ''}`
+      : undefined;
+    return {
+      answer: formatResearchAnswer(trimmed, hits, faqNote),
+      source: faq ? 'web+faq' : 'web',
+    };
   }
 
-  const remote = await withTimeout(
-    searchSaudiIslamicSources(trimmed).then((r) => formatSaudiGroundedAnswer(trimmed, r.hits)),
-    2500,
-  );
-  if (remote) return { answer: remote, source: 'islamhouse' };
+  if (faq) {
+    return {
+      answer:
+        `${faq.answer}\n\n` +
+        'İnternette ek kaynak şu an bulunamadı. Daha spesifik yazıp tekrar deneyebilirsiniz.\n\n' +
+        'Not: Genel bilgidir; fetva değildir.',
+      source: 'faq',
+    };
+  }
 
   return {
     answer:
-      `“${trimmed}” için net bir konu yakalayamadım.\n\n` +
-      'Cümlede şu kelimelerden birini kullan:\n' +
-      '**abdest, gusül, namaz, farz, oruç, zekât, kaza, kıble, teravih, cuma, dua**\n\n' +
-      'Örnek: “abdesti bozan şeyler neler?” / “sabah namazını kaçırdım ne yapayım?”',
+      `“${trimmed}” için güvenilir sitelerde net bir sonuç bulamadım.\n\n` +
+      'Soruyu biraz daha açık yazmayı deneyin (ör. “abdest nasıl alınır?”, “diş macunu orucu bozar mı?”).\n\n' +
+      'Araştırdığım siteler: Diyanet, İslam Evi, Sorularla İslamiyet, Fetva.net, Dinimiz İslam.',
     source: 'none',
   };
 }
