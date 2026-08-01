@@ -1,13 +1,26 @@
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, WifiOff } from 'lucide-react';
 
 interface StatusBannerProps {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
+  offlineCache?: boolean;
 }
 
-export function StatusBanner({ loading, error, onRetry }: StatusBannerProps) {
-  if (!loading && !error) return null;
+export function StatusBanner({ loading, error, onRetry, offlineCache }: StatusBannerProps) {
+  if (!loading && !error && !offlineCache) return null;
+
+  if (!loading && !error && offlineCache) {
+    return (
+      <div className="w-full rounded-2xl px-4 py-2.5 text-xs flex items-center justify-center gap-2 fade-in-up bg-[var(--surface-soft)] text-[var(--text-muted)] border border-[var(--border-soft)]">
+        <WifiOff className="h-3.5 w-3.5" />
+        <span>Çevrimdışı önbellekten gösteriliyor</span>
+        <button type="button" onClick={onRetry} className="underline underline-offset-2">
+          Yenile
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

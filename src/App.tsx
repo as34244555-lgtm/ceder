@@ -25,18 +25,20 @@ import { OccasionBanner } from './components/OccasionBanner';
 import { DailyWisdomCard } from './components/DailyWisdomCard';
 import { ReligiousAiChat } from './components/ReligiousAiChat';
 import { ReligiousAiPromo } from './components/ReligiousAiPromo';
+import { QuranScreen } from './components/QuranScreen';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useNow } from './hooks/useNow';
 import { usePrayerData } from './hooks/usePrayerData';
 import { useNextPrayer } from './hooks/useNextPrayer';
 import { useAdhanAlerts } from './hooks/useAdhanAlerts';
+import { useScheduledNotifications } from './hooks/useScheduledNotifications';
 import { useThemeEffect } from './hooks/useThemeEffect';
 import { useIslamicOccasion } from './hooks/useIslamicOccasion';
 import { useRamadanCountdown } from './hooks/useRamadanCountdown';
 import { useFavoriteCities } from './hooks/useFavoriteCities';
 import { reverseGeocodeLabel } from './api/geocode';
 import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
-import { primeAudio } from './utils/sound';
+import { primeAudio, unlockAdhanAudio } from './utils/sound';
 import {
   loadSelectedCity,
   loadSelectedCountry,
@@ -52,6 +54,7 @@ const DEFAULT_COUNTRY = 'Turkey';
 
 const SECONDARY_TITLES: Record<SecondaryScreenId, string> = {
   assistant: 'Dini Asistan',
+  quran: "Kur'an-ı Kerim",
   zikir: 'Zikir & Dualar',
   esma: "Esmaü'l-Hüsna",
   guide: 'Namaz Nasıl Kılınır?',
@@ -77,7 +80,7 @@ function App() {
   useThemeEffect(settings.theme);
 
   const { status: geoStatus, coords, error: geoError, requestLocation } = useGeolocation();
-  const { today, tomorrow, loading, error, refetch } = usePrayerData(
+  const { today, tomorrow, loading, error, refetch, fromCache } = usePrayerData(
     location,
     settings.calculationMethod,
   );
@@ -87,6 +90,7 @@ function App() {
   const favorites = useFavoriteCities();
 
   useAdhanAlerts(current, next, msRemaining, settings);
+  useScheduledNotifications(today, tomorrow, settings, location.label);
   const occasion = useIslamicOccasion(today?.hijri, settings.notificationsEnabled);
 
   const isRamadan = today?.hijri.month === 9;
@@ -100,6 +104,7 @@ function App() {
   useEffect(() => {
     const unlock = () => {
       primeAudio();
+      unlockAdhanAudio();
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
     };
@@ -203,7 +208,12 @@ function App() {
               onRemove={favorites.removeFavorite}
             />
 
-            <StatusBanner loading={loading} error={combinedError} onRetry={refetch} />
+            <StatusBanner
+              loading={loading}
+              error={combinedError}
+              onRetry={refetch}
+              offlineCache={fromCache}
+            />
 
             <KerahatBadge today={today} now={now} />
 
@@ -246,6 +256,7 @@ function App() {
         )}
 
         {activeTab === 'assistant' && <ReligiousAiChat />}
+        {activeTab === 'quran' && <QuranScreen />}
         {activeTab === 'zikir' && <ZikirTab />}
         {activeTab === 'esma' && <EsmaulHusnaList />}
         {activeTab === 'guide' && <PrayerGuideScreen />}

@@ -14,7 +14,7 @@ export function useIslamicOccasion(hijri: HijriDate | undefined, notificationsEn
       setOccasion(null);
       return;
     }
-    const found = findOccasion(hijri.month, hijri.day);
+    const found = findOccasion(hijri, new Date());
     setOccasion(found);
 
     if (!found || !notificationsEnabled) return;

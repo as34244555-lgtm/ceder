@@ -2,6 +2,7 @@ import {
   MessageCircleQuestion,
   Sparkles,
   BookOpenText,
+  BookMarked,
   GraduationCap,
   Moon,
   Calculator,
@@ -29,6 +30,12 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
       label: 'Dini Asistan',
       description: 'Soruyu güvenilir sitelerde araştırır',
       icon: MessageCircleQuestion,
+    },
+    {
+      id: 'quran',
+      label: "Kur'an-ı Kerim",
+      description: 'Arapça, Diyanet meal ve tilavet',
+      icon: BookMarked,
       badge: 'Yeni',
     },
     {

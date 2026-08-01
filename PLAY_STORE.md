@@ -65,14 +65,13 @@ npm run cap:sync
 
 Sonra Android Studio'da Run / yeniden paketle.
 
-## Sonraki native iyileştirmeler (opsiyonel ama önerilir)
+## Bu PR'da eklenen native özellikler
 
-Play Store rakiplerini **arka plan uyarıları** konusunda da geçmek için sırayla:
+1. `@capacitor/local-notifications` — vakit ve hatırlatmalar zamanlanır (`SCHEDULE_EXACT_ALARM`)
+2. Ana ekran **App Widget** (`PrayerTimesWidget`) — Preferences’taki sonraki vakitler
+3. Yüksek kaliteli ezan MP3’leri (Mekke / Medine / Sabah Fakhry / Aaqib)
 
-1. `@capacitor/local-notifications` + Android **Foreground Service** (vakit yaklaşınca kalıcı bildirim)
-2. Exact alarm izni (`SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`)
-3. Pil optimizasyonu istisnası yönlendirmesi (Xiaomi/Samsung vb.)
-4. Ana ekran widget (Jetpack Glance / App Widget)
-5. (İsteğe bağlı) DND / sessize alma için Notification Policy erişimi
-
-Bunlar istenirse ayrı bir görev olarak eklenebilir.
+### Hâlâ geliştirilebilir
+- Foreground Service ile kalıcı durum çubuğu bildirimi
+- Pil optimizasyonu istisnası yönlendirmesi (Xiaomi/Samsung)
+- Wear OS / iOS target

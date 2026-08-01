@@ -78,7 +78,14 @@ export function MonthlyCalendar({ location, method, timeFormat }: MonthlyCalenda
                   day.times[0].date.getMonth(),
                   day.times[0].date.getDate(),
                 ).toLocaleDateString('tr-TR', { weekday: 'short' });
-                const occasion = findOccasion(day.hijri.month, day.hijri.day);
+                const occasion = findOccasion(
+                  day.hijri,
+                  new Date(
+                    day.times[0].date.getFullYear(),
+                    day.times[0].date.getMonth(),
+                    day.times[0].date.getDate(),
+                  ),
+                );
                 return (
                   <tr
                     key={day.dateISO}

@@ -50,9 +50,20 @@ export interface FavoriteCity {
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type TimeFormat = '24' | '12';
+export type AdhanSoundMode = 'adhan' | 'chime';
+export type AdhanSoundId = 'makkah' | 'madinah' | 'sabah' | 'aaqib';
+
+export type PrayerAlertMap = Record<TrackablePrayerKey, boolean>;
 
 export interface AppSettings {
   soundEnabled: boolean;
+  /** Gerçek ezan kaydı veya kısa nağme */
+  adhanSoundMode: AdhanSoundMode;
+  adhanSoundId: AdhanSoundId;
+  /** Sabah (imsak) için ayrı ezan; null = genel sesle aynı */
+  fajrAdhanSoundId: AdhanSoundId | null;
+  /** Hangi vakitlerde ses/bildirim çalsın */
+  enabledPrayers: PrayerAlertMap;
   notificationsEnabled: boolean;
   /** @deprecated bkz. reminderMinutesList */
   reminderMinutesBefore?: number | null;
@@ -65,6 +76,7 @@ export interface AppSettings {
 export type PrimaryTabId = 'home' | 'tracker' | 'qibla' | 'calendar' | 'more';
 export type SecondaryScreenId =
   | 'assistant'
+  | 'quran'
   | 'zikir'
   | 'esma'
   | 'guide'

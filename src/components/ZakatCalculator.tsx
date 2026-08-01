@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Calculator } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calculator, RefreshCw } from 'lucide-react';
+import { DEFAULT_FITRE_TRY, fetchGoldGramPriceTry } from '../api/goldPrice';
 
 const NISAB_GOLD_GRAMS = 80.18;
 const ZAKAT_RATE = 0.025;
@@ -12,8 +13,27 @@ function parseNumber(value: string): number {
 export function ZakatCalculator() {
   const [wealth, setWealth] = useState('');
   const [goldPrice, setGoldPrice] = useState('');
-  const [fitreAmount, setFitreAmount] = useState('');
+  const [fitreAmount, setFitreAmount] = useState(String(DEFAULT_FITRE_TRY));
   const [personCount, setPersonCount] = useState('1');
+  const [goldSource, setGoldSource] = useState<string | null>(null);
+  const [goldLoading, setGoldLoading] = useState(false);
+
+  const loadGold = async () => {
+    setGoldLoading(true);
+    try {
+      const data = await fetchGoldGramPriceTry();
+      if (data) {
+        setGoldPrice(data.gramTry.toFixed(0));
+        setGoldSource(data.source);
+      }
+    } finally {
+      setGoldLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadGold();
+  }, []);
 
   const wealthNum = parseNumber(wealth);
   const goldPriceNum = parseNumber(goldPrice);
@@ -46,23 +66,35 @@ export function ZakatCalculator() {
         </label>
 
         <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
-          Güncel gram altın fiyatı (nisap sınırını hesaplamak için, TL)
-          <input
-            inputMode="decimal"
-            value={goldPrice}
-            onChange={(e) => setGoldPrice(e.target.value)}
-            placeholder="Örn. 4200"
-            className="rounded-xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none"
-          />
+          Güncel gram altın fiyatı (TL)
+          <div className="flex gap-2">
+            <input
+              inputMode="decimal"
+              value={goldPrice}
+              onChange={(e) => setGoldPrice(e.target.value)}
+              placeholder="Örn. 4200"
+              className="flex-1 rounded-xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void loadGold()}
+              disabled={goldLoading}
+              className="rounded-xl px-3 bg-[var(--surface-soft)] text-gold-300 border border-[var(--border-soft)] disabled:opacity-40"
+              aria-label="Altın fiyatını yenile"
+            >
+              <RefreshCw className={`h-4 w-4 ${goldLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+          {goldSource && (
+            <span className="text-[11px] text-[var(--text-faint)]">Kaynak: {goldSource}</span>
+          )}
         </label>
 
         <div className="rounded-xl bg-[var(--accent-soft-bg)] border border-[var(--accent-soft-border)] px-4 py-3 flex flex-col gap-1">
           {nisabTL !== null && (
             <p className="text-xs text-[var(--text-muted)]">
-              Nisap sınırı (≈{NISAB_GOLD_GRAMS} gr altın): {nisabTL.toLocaleString('tr-TR', {
-                maximumFractionDigits: 0,
-              })}{' '}
-              TL
+              Nisap sınırı (≈{NISAB_GOLD_GRAMS} gr altın):{' '}
+              {nisabTL.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} TL
             </p>
           )}
           <p className="text-sm font-semibold text-[var(--accent-soft-text)]">
@@ -74,25 +106,23 @@ export function ZakatCalculator() {
           </p>
         </div>
         <p className="text-[11px] text-[var(--text-muted)]">
-          Bu hesaplama genel bir rehberdir; borç, ticaret malı, hayvan zekâtı gibi özel durumlar
-          için bir din görevlisine danışmanız önerilir.
+          Bu hesaplama genel bir rehberdir; özel durumlar için bir din görevlisine danışın.
         </p>
       </div>
 
       <div className="glass-card rounded-2xl p-5 flex flex-col gap-4">
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Fitre Hesaplama</h3>
         <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
-          Bu yılki kişi başı fitre miktarı (Diyanet'in duyurduğu güncel tutar — TL)
+          Kişi başı fitre (TL) — varsayılan yaklaşık tutar; Diyanet duyurusuna göre güncelleyin
           <input
             inputMode="decimal"
             value={fitreAmount}
             onChange={(e) => setFitreAmount(e.target.value)}
-            placeholder="Örn. 170"
             className="rounded-xl bg-[var(--surface-soft)] border border-[var(--border-soft)] px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-xs text-[var(--text-muted)]">
-          Kişi sayısı (aile bireyleri)
+          Kişi sayısı
           <input
             inputMode="numeric"
             value={personCount}
@@ -105,9 +135,6 @@ export function ZakatCalculator() {
             Toplam fitre: {fitreTotal.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} TL
           </p>
         </div>
-        <p className="text-[11px] text-[var(--text-muted)]">
-          Güncel fitre miktarını Diyanet İşleri Başkanlığı'nın yıllık duyurusundan öğrenebilirsiniz.
-        </p>
       </div>
     </div>
   );

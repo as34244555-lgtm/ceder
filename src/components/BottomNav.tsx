@@ -16,6 +16,7 @@ const TABS: { id: PrimaryTabId; label: string; icon: typeof Clock }[] = [
 
 const SECONDARY_SCREENS: TabId[] = [
   'assistant',
+  'quran',
   'zikir',
   'esma',
   'guide',

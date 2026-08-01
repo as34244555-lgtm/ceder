@@ -1,33 +1,68 @@
 import { DEFAULT_METHOD_ID } from '../data/methods';
-import type { AppSettings, FavoriteCity } from '../types';
+import type { AppSettings, FavoriteCity, PrayerAlertMap } from '../types';
 
 const SETTINGS_KEY = 'ezan-app:settings';
 const CITY_KEY = 'ezan-app:selected-city';
 
+export const DEFAULT_ENABLED_PRAYERS: PrayerAlertMap = {
+  imsak: true,
+  ogle: true,
+  ikindi: true,
+  aksam: true,
+  yatsi: true,
+};
+
 export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
+  adhanSoundMode: 'adhan',
+  adhanSoundId: 'makkah',
+  fajrAdhanSoundId: 'madinah',
+  enabledPrayers: { ...DEFAULT_ENABLED_PRAYERS },
   notificationsEnabled: false,
-  reminderMinutesList: [],
+  reminderMinutesList: [15],
   calculationMethod: DEFAULT_METHOD_ID,
   theme: 'dark',
   timeFormat: '24',
 };
+
+const VALID_SOUND_IDS = new Set(['makkah', 'madinah', 'sabah', 'aaqib']);
 
 export function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw) as Partial<AppSettings> & Record<string, unknown>;
-    const merged = { ...DEFAULT_SETTINGS, ...parsed };
-    // Eski tekil hatırlatma alanından yeni çoklu listeye geçiş.
+    const merged: AppSettings = {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      enabledPrayers: {
+        ...DEFAULT_ENABLED_PRAYERS,
+        ...(parsed.enabledPrayers ?? {}),
+      },
+    };
+
     if (parsed.reminderMinutesBefore && merged.reminderMinutesList.length === 0) {
-      merged.reminderMinutesList = [parsed.reminderMinutesBefore];
+      merged.reminderMinutesList = [parsed.reminderMinutesBefore as number];
     }
-    // Kaldırılan gerçek ezan sesi ayarlarını temizle.
-    delete (merged as Record<string, unknown>).adhanSoundMode;
-    delete (merged as Record<string, unknown>).adhanSoundId;
+
+    // Eski (kaldırılmış) ses kimliklerini temizle / geçir
+    const legacyId = parsed.adhanSoundId as string | undefined;
+    if (legacyId === 'ses1' || legacyId === 'ses2' || !VALID_SOUND_IDS.has(String(merged.adhanSoundId))) {
+      merged.adhanSoundId = 'makkah';
+    }
+    if (merged.fajrAdhanSoundId && !VALID_SOUND_IDS.has(merged.fajrAdhanSoundId)) {
+      merged.fajrAdhanSoundId = 'madinah';
+    }
+    if (merged.adhanSoundMode !== 'adhan' && merged.adhanSoundMode !== 'chime') {
+      merged.adhanSoundMode = 'adhan';
+    }
+
     return {
       soundEnabled: merged.soundEnabled,
+      adhanSoundMode: merged.adhanSoundMode,
+      adhanSoundId: merged.adhanSoundId,
+      fajrAdhanSoundId: merged.fajrAdhanSoundId,
+      enabledPrayers: merged.enabledPrayers,
       notificationsEnabled: merged.notificationsEnabled,
       reminderMinutesBefore: merged.reminderMinutesBefore,
       reminderMinutesList: merged.reminderMinutesList,
@@ -44,7 +79,7 @@ export function saveSettings(settings: AppSettings) {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch {
-    // localStorage kullanılamıyor olabilir (gizli sekme vb.)
+    // yoksay
   }
 }
 
@@ -101,7 +136,6 @@ export function saveFavoriteCities(favorites: FavoriteCity[]) {
   }
 }
 
-/** Genel amaçlı, tarihe göre anahtarlanan JSON verisi okuma/yazma (namaz takibi, oruç takvimi vb. için). */
 export function loadJSON<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
