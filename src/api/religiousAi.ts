@@ -1,6 +1,11 @@
 import { matchReligiousFaq } from '../data/religiousFaq';
 import { searchIslamHouseExact } from './islamHouse';
-import { formatResearchAnswer, searchTrustedWeb, type ResearchHit } from './webResearch';
+import {
+  formatResearchAnswer,
+  scoreResearchHit,
+  searchTrustedWeb,
+  type ResearchHit,
+} from './webResearch';
 
 export interface ChatMessage {
   id: string;
@@ -28,6 +33,15 @@ function dedupeHits(hits: ResearchHit[]): ResearchHit[] {
   return out;
 }
 
+function rankHits(question: string, hits: ResearchHit[]): ResearchHit[] {
+  return dedupeHits(hits)
+    .map((hit) => ({ hit, score: scoreResearchHit(question, hit) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ hit }) => hit)
+    .slice(0, 6);
+}
+
 /**
  * Sorunun aynısını güvenilir sitelerde araştırır:
  * - İslam Evi (doğrudan API)
@@ -48,13 +62,13 @@ export async function askReligiousAi(
     };
   }
 
+  // Kaynaklar birbirinden bağımsız; biri düşse diğeri çalışır
   const [islamHouseHits, webHits] = await Promise.all([
-    searchIslamHouseExact(trimmed),
-    searchTrustedWeb(trimmed),
+    searchIslamHouseExact(trimmed).catch(() => [] as ResearchHit[]),
+    searchTrustedWeb(trimmed).catch(() => [] as ResearchHit[]),
   ]);
 
-  // Önce web (çeşitli güvenilir siteler), sonra İslam Evi — tekrarları ayıkla
-  const hits = dedupeHits([...webHits, ...islamHouseHits]).slice(0, 6);
+  const hits = rankHits(trimmed, [...islamHouseHits, ...webHits]);
   const faq = matchReligiousFaq(trimmed);
 
   if (hits.length > 0) {

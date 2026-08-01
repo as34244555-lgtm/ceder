@@ -57,25 +57,36 @@ export async function searchIslamHouseExact(question: string): Promise<ResearchH
     },
     body,
   });
-  if (!response?.ok) return [];
+  // 404 = sonuç yok (Arapça HTML gövde döner); diğer hatalarda da boş dön
+  if (!response || response.status === 404 || !response.ok) return [];
 
   let json: IslamHouseSearchResponse;
   try {
-    json = (await response.json()) as IslamHouseSearchResponse;
+    const raw = await response.text();
+    if (!raw.trim().startsWith('{')) return [];
+    json = JSON.parse(raw) as IslamHouseSearchResponse;
   } catch {
     return [];
   }
 
-  return (json.items ?? []).slice(0, 8).map((item) => {
+  const items = (json.items ?? []).filter((item) => item?.id && item?.title);
+  // Önce Türkçe; yoksa diğer diller (ama tercihen tr)
+  const preferred = items.filter((i) => (i.lang ?? 'tr') === 'tr');
+  const pool = preferred.length > 0 ? preferred : items;
+
+  return pool.slice(0, 8).map((item) => {
     const title = stripHtml(item.title ?? '');
     const snippet = stripHtml(item.nabza ?? '');
     return {
       title,
-      snippet: snippet && snippet.toLowerCase() !== title.toLowerCase() ? snippet.slice(0, 280) : '',
+      snippet:
+        snippet && snippet.toLocaleLowerCase('tr') !== title.toLocaleLowerCase('tr')
+          ? snippet.slice(0, 280)
+          : '',
       url: `https://islamhouse.com/${item.id}`,
       host: 'islamhouse.com',
     };
-  });
+  }).filter((h) => h.title.length > 0);
 }
 
 /** Geriye uyumluluk — eski çağrılar için. */

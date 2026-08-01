@@ -48,6 +48,64 @@ function cleanText(text: string): string {
     .trim();
 }
 
+const STOP_WORDS = new Set([
+  'nasil', 'nasıl', 'nedir', 'ne', 'icin', 'için', 'bir', 'bu', 'su', 'şu',
+  'ile', 'mi', 'mu', 'mü', 'mı', 've', 'veya', 'olan', 'olarak', 'gibi',
+  'kadar', 'daha', 'cok', 'çok', 'var', 'yok', 'eder', 'etmek', 'yapmak',
+  'olur', 'olmaz', 'hakkinda', 'hakkında', 'soru', 'cevap', 'fetva',
+  'the', 'and', 'for', 'with', 'from', 'pdf', 'http', 'https', 'www',
+]);
+
+export function normalizeTr(text: string): string {
+  return text
+    .toLocaleLowerCase('tr')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Soruya göre alaka skoru — alakasız anasayfa sonuçlarını elemek için. */
+export function scoreResearchHit(question: string, hit: ResearchHit): number {
+  const qParts = normalizeTr(question)
+    .split(' ')
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
+  if (qParts.length === 0) return 0;
+
+  const hay = normalizeTr(`${hit.title} ${hit.snippet} ${hit.url}`);
+  if (!hay) return 0;
+
+  // Genel site anasayfaları / dil seçim sayfaları
+  if (
+    /all languages|butun diller|bütün diller|anasayfa|home page|sorularla islamiyet\s*$/i.test(
+      hit.title,
+    ) &&
+    qParts.every((p) => !normalizeTr(hit.title).includes(p.slice(0, 4)))
+  ) {
+    return 0;
+  }
+
+  let matched = 0;
+  for (const p of qParts) {
+    const stem = p.slice(0, Math.min(5, p.length));
+    if (hay.includes(stem)) matched += 1;
+  }
+  return matched;
+}
+
+export function filterRelevantHits(question: string, hits: ResearchHit[]): ResearchHit[] {
+  return hits
+    .map((hit) => ({ hit, score: scoreResearchHit(question, hit) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ hit }) => hit);
+}
+
 function parseDuckDuckGoMarkdown(md: string): ResearchHit[] {
   const results: ResearchHit[] = [];
   const blocks = md.split(/\n## /).slice(1);
