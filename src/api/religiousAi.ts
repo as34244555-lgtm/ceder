@@ -8,7 +8,7 @@ export interface ChatMessage {
 }
 
 const DISCLAIMER =
-  '\n\n_Not: Genel bilgidir; fetva değildir. https://alifta.gov.sa_';
+  '\n\nNot: Genel bilgidir; fetva değildir. https://alifta.gov.sa';
 
 function isGreeting(text: string): boolean {
   const t = text.trim();
@@ -34,9 +34,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
 }
 
 /**
- * Önce yerel SSS ile ANINDA cevap.
- * İslam Evi en fazla ~2.5 sn denenir; gelirse kaynak eklenir.
- * Ağ olmasa da SSS cevabı çalışır.
+ * Serbest yazılan sorularda önce konu eşleştirmesi (anında),
+ * sonra isteğe bağlı İslam Evi kaynakları.
  */
 export async function askReligiousAi(
   question: string,
@@ -48,7 +47,7 @@ export async function askReligiousAi(
   if (isGreeting(trimmed)) {
     return {
       answer:
-        'Aleykümselam. Sorunuzu yazın — hemen cevaplarım (abdest, namaz, oruç, zekât, gusül…).',
+        'Aleykümselam. Sorunuzu kendi cümlelerinizle yazın — örneğin “abdesti nasıl alırım?”, “oruçta diş macunu olur mu?”',
       source: 'greeting',
     };
   }
@@ -56,13 +55,12 @@ export async function askReligiousAi(
   const faq = matchReligiousFaq(trimmed);
   const local = faq ? `${faq.answer}${DISCLAIMER}` : null;
 
-  // Yerel cevap varsa İslam Evi'ni bekletmeden döndür (kaynak için kısa dene)
   if (local) {
     const remote = await withTimeout(
       searchSaudiIslamicSources(trimmed).then((r) =>
         formatSaudiGroundedAnswer(trimmed, r.hits),
       ),
-      2200,
+      2000,
     );
     if (remote) {
       return { answer: `${local}\n\n---\n\n${remote}`, source: 'faq+islamhouse' };
@@ -70,21 +68,18 @@ export async function askReligiousAi(
     return { answer: local, source: 'faq' };
   }
 
-  // SSS yoksa İslam Evi'ni dene
   const remote = await withTimeout(
     searchSaudiIslamicSources(trimmed).then((r) => formatSaudiGroundedAnswer(trimmed, r.hits)),
-    2800,
+    2500,
   );
   if (remote) return { answer: remote, source: 'islamhouse' };
 
   return {
     answer:
-      `“${trimmed}” için hazır cevabım yok.\n\n` +
-      'Şunu dene:\n' +
-      '• **abdest** / **gusül** / **namaz farzları**\n' +
-      '• **oruç** / **diş macunu**\n' +
-      '• **zekât** / **kaza namaz** / **teravih**\n' +
-      '• veya aşağıdaki hazır sorulardan birini seç',
+      `“${trimmed}” için net bir konu yakalayamadım.\n\n` +
+      'Cümlede şu kelimelerden birini kullan:\n' +
+      '**abdest, gusül, namaz, farz, oruç, zekât, kaza, kıble, teravih, cuma, dua**\n\n' +
+      'Örnek: “abdesti bozan şeyler neler?” / “sabah namazını kaçırdım ne yapayım?”',
     source: 'none',
   };
 }
