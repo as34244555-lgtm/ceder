@@ -150,7 +150,7 @@ export function ReligiousAiChat() {
         {loading && (
           <div className="flex gap-2.5 items-center text-xs text-[var(--text-muted)] pl-10">
             <Loader2 className="h-4 w-4 animate-spin text-gold-400" />
-            İslam Evi kaynaklarında araştırılıyor…
+            Cevap hazırlanıyor…
           </div>
         )}
         <div ref={bottomRef} />

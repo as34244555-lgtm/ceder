@@ -22,28 +22,17 @@ function isGreeting(text: string): boolean {
 function faqAnswer(question: string): string | null {
   const hit = matchReligiousFaq(question);
   if (!hit) return null;
-  return `${hit.answer}\n\nDaha ayrıntı için İslam Evi (islamhouse.com) ve https://alifta.gov.sa incelenebilir.${DISCLAIMER}`;
+  return `${hit.answer}${DISCLAIMER}`;
 }
 
-function notFoundAnswer(question: string): string {
-  return (
-    `“${question}” için İslam Evi’nde yeterince net bir Türkçe kaynak bulamadım.\n\n` +
-    'Şunları deneyebilirsiniz:\n' +
-    '• Soruyu daha kısa yazın (ör. “oruç diş macunu”, “sabah namazı kaza”)\n' +
-    '• Aşağıdaki hazır sorulardan birini seçin\n' +
-    '• Resmi ifta: https://alifta.gov.sa\n' +
-    '• İslam Evi araması: https://islamhouse.com/tr/search/'
-  );
-}
-
-export type ReligiousAiSource = 'faq' | 'islamhouse' | 'greeting' | 'none';
+export type ReligiousAiSource = 'faq' | 'islamhouse' | 'faq+islamhouse' | 'greeting' | 'none';
 
 /**
- * Puter/kayıt ekranı olmadan:
  * 1) Selam
- * 2) Yerel SSS (hızlı, doğru)
- * 3) İslam Evi — yalnızca alakalı sonuçlar
- * 4) Anlaşılır “bulunamadı” mesajı
+ * 2) Yerel SSS (her zaman çalışır)
+ * 3) İslam Evi kaynak linkleri (varsa eklenir)
+ * 4) Sadece İslam Evi
+ * 5) Bulunamadı
  */
 export async function askReligiousAi(
   question: string,
@@ -55,21 +44,38 @@ export async function askReligiousAi(
   if (isGreeting(trimmed)) {
     return {
       answer:
-        'Aleykümselam. Dini sorunuzu yazabilirsiniz — İslam Evi (Suudi İslam İşleri Bakanlığı yayınları) üzerinden araştırıp kaynaklı cevaplarım.',
+        'Aleykümselam. Sorunuzu yazın — önce hızlı cevap verir, ardından İslam Evi’nden kaynak linkleri eklerim.',
       source: 'greeting',
     };
   }
 
-  // Yerel SSS önce: hazır/benzer sorularda anında doğru cevap
   const local = faqAnswer(trimmed);
-  if (local) return { answer: local, source: 'faq' };
 
-  // İslam Evi — alakasız sonuçlar elenir
-  const { hits } = await searchSaudiIslamicSources(trimmed);
-  const grounded = formatSaudiGroundedAnswer(trimmed, hits);
+  // İslam Evi'ni dene; başarısız olsa bile yerel cevap varsa onu göster
+  let grounded: string | null = null;
+  try {
+    const { hits } = await searchSaudiIslamicSources(trimmed);
+    grounded = formatSaudiGroundedAnswer(trimmed, hits);
+  } catch {
+    grounded = null;
+  }
+
+  if (local && grounded) {
+    return {
+      answer: `${local}\n\n---\n\n${grounded}`,
+      source: 'faq+islamhouse',
+    };
+  }
+  if (local) return { answer: local, source: 'faq' };
   if (grounded) return { answer: grounded, source: 'islamhouse' };
 
-  return { answer: notFoundAnswer(trimmed), source: 'none' };
+  return {
+    answer:
+      `“${trimmed}” için henüz net bir cevap bulamadım.\n\n` +
+      'Daha iyi sonuç için kısa yazın: örn. **abdest**, **oruç diş macunu**, **teravih rekat**, **namaz kaza**.\n\n' +
+      'Hazır sorulardan birini de seçebilirsiniz. Resmi ifta: https://alifta.gov.sa',
+    source: 'none',
+  };
 }
 
 export function createMessageId(): string {
