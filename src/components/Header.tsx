@@ -3,9 +3,10 @@ import { Moon } from 'lucide-react';
 interface HeaderProps {
   gregorianDateLabel?: string;
   hijriDate?: string;
+  title?: string;
 }
 
-export function Header({ gregorianDateLabel, hijriDate }: HeaderProps) {
+export function Header({ gregorianDateLabel, hijriDate, title }: HeaderProps) {
   return (
     <header className="flex flex-col items-center gap-2 pt-8 pb-4 text-center px-4">
       <div className="flex items-center gap-2 text-gold-300">
@@ -14,7 +15,9 @@ export function Header({ gregorianDateLabel, hijriDate }: HeaderProps) {
           Ezan Vakti Ultra
         </span>
       </div>
-      <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">Namaz Vakitleri</h1>
+      <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text-primary)]">
+        {title ?? 'Namaz Vakitleri'}
+      </h1>
       <p className="text-sm text-[var(--text-secondary)]">
         {gregorianDateLabel ?? 'Bugün'}
         {hijriDate ? ` · ${hijriDate}` : ''}

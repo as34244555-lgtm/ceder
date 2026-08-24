@@ -67,11 +67,14 @@ Sonra Android Studio'da Run / yeniden paketle.
 
 ## Bu PR'da eklenen native özellikler
 
-1. `@capacitor/local-notifications` — vakit ve hatırlatmalar zamanlanır (`SCHEDULE_EXACT_ALARM`)
-2. Ana ekran **App Widget** (`PrayerTimesWidget`) — Preferences’taki sonraki vakitler
-3. Yüksek kaliteli ezan MP3’leri (Mekke / Medine / Sabah Fakhry / Aaqib)
+1. `@capacitor/local-notifications` — vakit / hatırlatma / kamet zamanlanır
+2. **Foreground Service** (`OngoingPrayerService`) — kalıcı “sonraki namaz” bildirimi
+3. Boot’ta servis yeniden başlar (`BootCompletedReceiver`)
+4. Pil optimizasyonu + exact alarm ayar kısayolları (`PrayerNative` eklentisi)
+5. Ana ekran **App Widget**
+6. Wear OS için `wear_prayer_times` Preferences anahtarı (telefon tarafı senkron)
 
-### Hâlâ geliştirilebilir
-- Foreground Service ile kalıcı durum çubuğu bildirimi
-- Pil optimizasyonu istisnası yönlendirmesi (Xiaomi/Samsung)
-- Wear OS / iOS target
+### Wear OS notu
+Telefon, Capacitor Preferences’a `wear_prayer_times` JSON yazar:
+`{ location, updatedAt, times: [{ label, time, at }] }`.
+Ayrı Wear uygulaması bu anahtarı Data Layer ile okuyacak şekilde eklenebilir; bu pakette telefon/companion veri sözleşmesi hazırdır. iOS hedefi bilerek dışarıda bırakılmıştır.

@@ -6,6 +6,9 @@ import {
   Moon,
   Calculator,
   MapPinned,
+  Utensils,
+  Plane,
+  Shield,
   Settings as SettingsIcon,
   ChevronRight,
 } from 'lucide-react';
@@ -27,7 +30,7 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
     {
       id: 'quran',
       label: "Kur'an-ı Kerim",
-      description: 'Arapça, Diyanet meal ve tilavet',
+      description: 'Meal, hatim, ezber, tilavet',
       icon: BookMarked,
     },
     {
@@ -68,9 +71,27 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
       icon: MapPinned,
     },
     {
+      id: 'halal',
+      label: 'Helal Mekânlar',
+      description: 'Helal restoran ve marketler',
+      icon: Utensils,
+    },
+    {
+      id: 'hajj',
+      label: 'Hac & Umre Rehberi',
+      description: 'Kısa menasik özeti',
+      icon: Plane,
+    },
+    {
+      id: 'privacy',
+      label: 'Gizlilik',
+      description: 'Veri, lisans ve üçüncü taraflar',
+      icon: Shield,
+    },
+    {
       id: 'settings',
       label: 'Ayarlar',
-      description: 'Tema, ses, bildirim, hesaplama yöntemi',
+      description: 'Dil, ezan, kamet, bildirim, yedek',
       icon: SettingsIcon,
     },
   ];

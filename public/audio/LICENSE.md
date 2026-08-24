@@ -27,7 +27,18 @@ Kaynak: Wikimedia Commons —
 [The Adhan - Muslim Call to Prayer - Aaqib Azeez.mp3](https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3)  
 Lisans: **CC BY-SA 4.0** — https://creativecommons.org/licenses/by-sa/4.0/
 
----
+## aqsa.mp3 (+ preview)
 
-Tüm dosyalar mobil uyumluluk için MP3’e dönüştürülmüş / yeniden kodlanmış;
-önizlemeler ilk ~22 saniyedir.
+Kaynak: [Kiwifu/adhan-mp3](https://github.com/Kiwifu/adhan-mp3) — Mescid-i Aksa.  
+İslami uygulamalarda kullanım için paylaşılan koleksiyon.
+
+## klcc.mp3 (+ preview)
+
+Kaynak: Internet Archive — [AzanZhurMasjidKlcc](https://archive.org/details/AzanZhurMasjidKlcc)  
+Lisans: **CC0 1.0**
+
+## mishary.mp3 (+ preview)
+
+Kaynak: [Kiwifu/adhan-mp3](https://github.com/Kiwifu/adhan-mp3) — Mishary Alafasy HQ.  
+İslami uygulamalarda kullanım için paylaşılan koleksiyon.
+

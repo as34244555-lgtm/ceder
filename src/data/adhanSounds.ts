@@ -10,7 +10,6 @@ export interface AdhanSoundOption {
 
 const audioBase = `${import.meta.env.BASE_URL}audio/`;
 
-/** Önceki düşük kaliteli kayıtlardan farklı, bilinen müezzin / cami kayıtları. */
 export const ADHAN_SOUNDS: AdhanSoundOption[] = [
   {
     id: 'makkah',
@@ -39,6 +38,27 @@ export const ADHAN_SOUNDS: AdhanSoundOption[] = [
     description: 'Net stüdyo kaydı (CC BY-SA 4.0)',
     fullSrc: `${audioBase}aaqib-azeez.mp3`,
     previewSrc: `${audioBase}aaqib-azeez-preview.mp3`,
+  },
+  {
+    id: 'aqsa',
+    label: 'Kudüs — Mescid-i Aksa',
+    description: 'Al-Aqsa ezanı',
+    fullSrc: `${audioBase}aqsa.mp3`,
+    previewSrc: `${audioBase}aqsa-preview.mp3`,
+  },
+  {
+    id: 'klcc',
+    label: 'Malezya — KLCC',
+    description: 'CC0 saha kaydı',
+    fullSrc: `${audioBase}klcc.mp3`,
+    previewSrc: `${audioBase}klcc-preview.mp3`,
+  },
+  {
+    id: 'mishary',
+    label: 'Mishary Alafasy',
+    description: 'Kuveyt üslubu',
+    fullSrc: `${audioBase}mishary.mp3`,
+    previewSrc: `${audioBase}mishary-preview.mp3`,
   },
 ];
 

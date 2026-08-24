@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './components/Header';
 import { LocationBar } from './components/LocationBar';
 import { FavoriteCitiesBar } from './components/FavoriteCitiesBar';
@@ -18,6 +18,9 @@ import { RamadanBanner } from './components/RamadanBanner';
 import { RamadanScreen } from './components/RamadanScreen';
 import { ZakatCalculator } from './components/ZakatCalculator';
 import { NearbyMosques } from './components/NearbyMosques';
+import { HalalPlacesScreen } from './components/HalalPlacesScreen';
+import { HajjGuideScreen } from './components/HajjGuideScreen';
+import { PrivacyScreen } from './components/PrivacyScreen';
 import { KerahatBadge } from './components/KerahatBadge';
 import { EsmaulHusnaList } from './components/EsmaulHusnaList';
 import { PrayerGuideScreen } from './components/PrayerGuideScreen';
@@ -26,6 +29,7 @@ import { DailyWisdomCard } from './components/DailyWisdomCard';
 import { QuranScreen } from './components/QuranScreen';
 import { OnboardingPermissions } from './components/OnboardingPermissions';
 import { PrayerCheckPrompt } from './components/PrayerCheckPrompt';
+import { IqamahBanner } from './components/IqamahBanner';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useNow } from './hooks/useNow';
 import { usePrayerData } from './hooks/usePrayerData';
@@ -41,6 +45,7 @@ import { useKazaCounter } from './hooks/useKazaCounter';
 import { reverseGeocodeLabel } from './api/geocode';
 import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
 import { primeAudio, unlockAdhanAudio } from './utils/sound';
+import { getIqamahCountdown } from './utils/iqamah';
 import { loadJSON, saveJSON } from './utils/storage';
 import {
   loadSelectedCity,
@@ -50,10 +55,9 @@ import {
   saveSelectedCountry,
   saveSettings,
 } from './utils/storage';
+import { t } from './i18n/translations';
 import type {
-  AppSettings,
   LocationInfo,
-  PrimaryTabId,
   PrayerTime,
   SecondaryScreenId,
   TabId,
@@ -72,6 +76,9 @@ const SECONDARY_TITLES: Record<SecondaryScreenId, string> = {
   ramadan: 'Ramazan Modu',
   zakat: 'Zekât & Fitre',
   mosques: 'Yakındaki Camiler',
+  halal: 'Helal Mekânlar',
+  hajj: 'Hac & Umre Rehberi',
+  privacy: 'Gizlilik',
   settings: 'Ayarlar',
 };
 
@@ -83,7 +90,7 @@ function App() {
     const country = loadSelectedCountry() ?? DEFAULT_COUNTRY;
     return { label: city, city, country, source: 'city' };
   });
-  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
+  const [settings, setSettings] = useState(() => loadSettings());
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
   >(() => (isNotificationSupported() ? Notification.permission : 'unsupported'));
@@ -96,6 +103,10 @@ function App() {
   } | null>(null);
 
   useThemeEffect(settings.theme);
+  useEffect(() => {
+    document.documentElement.lang = settings.language;
+    document.documentElement.dir = settings.language === 'ar' ? 'rtl' : 'ltr';
+  }, [settings.language]);
 
   const { status: geoStatus, coords, error: geoError, requestLocation } = useGeolocation();
   const { today, tomorrow, loading, error, refetch, fromCache } = usePrayerData(
@@ -108,15 +119,18 @@ function App() {
   const favorites = useFavoriteCities();
   const tracker = usePrayerTracker();
   const kaza = useKazaCounter();
+  const iqamah = useMemo(
+    () => getIqamahCountdown(current, now, settings.iqamahMinutes),
+    [current, now, settings.iqamahMinutes],
+  );
 
   const handlePrayerEntered = useCallback((prayer: PrayerTime & { key: TrackablePrayerKey }) => {
-    setPendingCheck({ key: prayer.key, label: prayer.label });
-  }, []);
+    if (!settings.kidsMode) setPendingCheck({ key: prayer.key, label: prayer.label });
+  }, [settings.kidsMode]);
 
   useAdhanAlerts(current, next, msRemaining, settings, handlePrayerEntered);
   useScheduledNotifications(today, tomorrow, settings, location.label);
   const occasion = useIslamicOccasion(today?.hijri, settings.notificationsEnabled);
-
   const isRamadan = today?.hijri.month === 9;
 
   useEffect(() => {
@@ -176,40 +190,41 @@ function App() {
       saveJSON(ONBOARDING_KEY, true);
       setShowOnboarding(false);
       if (opts.notificationsGranted) {
-        setSettings((s) => ({ ...s, notificationsEnabled: true, soundEnabled: true }));
+        setSettings((s) => ({
+          ...s,
+          notificationsEnabled: true,
+          soundEnabled: true,
+          ongoingNotification: true,
+        }));
         setNotificationPermission('granted');
       }
     },
     [],
   );
 
-  const handlePrimaryNav = useCallback((tab: PrimaryTabId) => {
-    setActiveTab(tab);
-  }, []);
-
-  const handleSecondaryNav = useCallback((screen: SecondaryScreenId) => {
-    setActiveTab(screen);
-  }, []);
-
   const currentKeyId = current ? `${current.key}-${current.date.toDateString()}` : null;
   const combinedError = error ?? (geoStatus === 'error' ? geoError : null);
-
   const canFavorite =
     location.source === 'city' && Boolean(location.city) && Boolean(location.country);
   const isCurrentFavorite = canFavorite
     ? favorites.isFavorite(location.city, location.country)
     : false;
-
   const secondaryTitle =
     activeTab in SECONDARY_TITLES
       ? SECONDARY_TITLES[activeTab as SecondaryScreenId]
       : null;
 
+  const kidsHome = settings.kidsMode && activeTab === 'home';
+
   return (
     <div className="min-h-screen flex flex-col items-center relative z-10 px-4 sm:px-6 pb-24">
       <div className="star-field" />
       <div className="w-full max-w-4xl flex flex-col items-center gap-6 relative z-10">
-        <Header gregorianDateLabel={today?.gregorianDateLabel} hijriDate={today?.hijriDate} />
+        <Header
+          gregorianDateLabel={today?.gregorianDateLabel}
+          hijriDate={today?.hijriDate}
+          title={t(settings.language, 'prayerTimes')}
+        />
 
         {secondaryTitle && (
           <SubScreenHeader title={secondaryTitle} onBack={() => setActiveTab('more')} />
@@ -217,31 +232,35 @@ function App() {
 
         {activeTab === 'home' && (
           <>
-            {isRamadan && ramadanCountdown && today && (
+            {isRamadan && ramadanCountdown && today && !kidsHome && (
               <RamadanBanner countdown={ramadanCountdown} hijri={today.hijri} />
             )}
-            {occasion && <OccasionBanner occasion={occasion} />}
+            {occasion && !kidsHome && <OccasionBanner occasion={occasion} />}
 
-            <LocationBar
-              selectedCity={selectedCity}
-              onCityChange={handleCityChange}
-              onUseLocation={handleUseLocation}
-              locationLoading={geoStatus === 'loading'}
-              activeLabel={location.label}
-              isUsingGps={location.source === 'gps'}
-            />
+            {!kidsHome && (
+              <LocationBar
+                selectedCity={selectedCity}
+                onCityChange={handleCityChange}
+                onUseLocation={handleUseLocation}
+                locationLoading={geoStatus === 'loading'}
+                activeLabel={location.label}
+                isUsingGps={location.source === 'gps'}
+              />
+            )}
 
-            <FavoriteCitiesBar
-              favorites={favorites.favorites}
-              activeCity={location.source === 'city' ? location.city : ''}
-              isCurrentFavorite={isCurrentFavorite}
-              onSelect={handleCityChange}
-              onToggleCurrent={() => {
-                if (!canFavorite) return;
-                favorites.toggleFavorite(location.city, location.country, location.label);
-              }}
-              onRemove={favorites.removeFavorite}
-            />
+            {!kidsHome && (
+              <FavoriteCitiesBar
+                favorites={favorites.favorites}
+                activeCity={location.source === 'city' ? location.city : ''}
+                isCurrentFavorite={isCurrentFavorite}
+                onSelect={handleCityChange}
+                onToggleCurrent={() => {
+                  if (!canFavorite) return;
+                  favorites.toggleFavorite(location.city, location.country, location.label);
+                }}
+                onRemove={favorites.removeFavorite}
+              />
+            )}
 
             <StatusBanner
               loading={loading}
@@ -250,7 +269,10 @@ function App() {
               offlineCache={fromCache}
             />
 
-            <KerahatBadge today={today} now={now} />
+            {!kidsHome && <KerahatBadge today={today} now={now} />}
+            {iqamah && (
+              <IqamahBanner label={iqamah.label} msRemaining={iqamah.msRemaining} />
+            )}
 
             <NextPrayerHero
               current={current}
@@ -268,14 +290,17 @@ function App() {
               />
             )}
 
-            <DailyWisdomCard />
+            {!kidsHome && <DailyWisdomCard />}
+            {kidsHome && (
+              <p className="text-xs text-center text-[var(--text-muted)]">
+                Çocuk modu açık — sade görünüm. Kapatmak için Ayarlar.
+              </p>
+            )}
           </>
         )}
 
         {activeTab === 'tracker' && <PrayerTrackerScreen />}
-
         {activeTab === 'qibla' && <QiblaCompass location={location} />}
-
         {activeTab === 'calendar' && (
           <MonthlyCalendar
             location={location}
@@ -283,11 +308,9 @@ function App() {
             timeFormat={settings.timeFormat}
           />
         )}
-
         {activeTab === 'more' && (
-          <MoreMenu onNavigate={handleSecondaryNav} isRamadan={Boolean(isRamadan)} />
+          <MoreMenu onNavigate={(s) => setActiveTab(s)} isRamadan={Boolean(isRamadan)} />
         )}
-
         {activeTab === 'quran' && <QuranScreen />}
         {activeTab === 'zikir' && <ZikirTab />}
         {activeTab === 'esma' && <EsmaulHusnaList />}
@@ -303,6 +326,9 @@ function App() {
         )}
         {activeTab === 'zakat' && <ZakatCalculator />}
         {activeTab === 'mosques' && <NearbyMosques location={location} />}
+        {activeTab === 'halal' && <HalalPlacesScreen location={location} />}
+        {activeTab === 'hajj' && <HajjGuideScreen />}
+        {activeTab === 'privacy' && <PrivacyScreen />}
         {activeTab === 'settings' && (
           <SettingsScreen
             settings={settings}
@@ -317,7 +343,7 @@ function App() {
         <Footer />
       </div>
 
-      <BottomNav active={activeTab} onChange={handlePrimaryNav} />
+      <BottomNav active={activeTab} onChange={(tab) => setActiveTab(tab)} />
 
       {showOnboarding && (
         <OnboardingPermissions

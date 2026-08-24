@@ -22,6 +22,9 @@ const SECONDARY_SCREENS: TabId[] = [
   'ramadan',
   'zakat',
   'mosques',
+  'halal',
+  'hajj',
+  'privacy',
   'settings',
 ];
 

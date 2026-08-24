@@ -6,14 +6,12 @@ export type PrayerKey =
   | 'aksam'
   | 'yatsi';
 
-/** Takip/kaza gibi özelliklerde kullanılan, güneş hariç 5 vakit. */
 export type TrackablePrayerKey = 'imsak' | 'ogle' | 'ikindi' | 'aksam' | 'yatsi';
 
 export interface PrayerTime {
   key: PrayerKey;
   label: string;
   date: Date;
-  /** Whether this marks an actual ezan (call to prayer), as opposed to a transitional marker like sunrise. */
   isAdhan: boolean;
 }
 
@@ -51,26 +49,35 @@ export interface FavoriteCity {
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type TimeFormat = '24' | '12';
 export type AdhanSoundMode = 'adhan' | 'chime';
-export type AdhanSoundId = 'makkah' | 'madinah' | 'sabah' | 'aaqib';
-
+export type AdhanSoundId =
+  | 'makkah'
+  | 'madinah'
+  | 'sabah'
+  | 'aaqib'
+  | 'aqsa'
+  | 'klcc'
+  | 'mishary';
+export type AppLanguage = 'tr' | 'en' | 'ar';
 export type PrayerAlertMap = Record<TrackablePrayerKey, boolean>;
 
 export interface AppSettings {
   soundEnabled: boolean;
-  /** Gerçek ezan kaydı veya kısa nağme */
   adhanSoundMode: AdhanSoundMode;
   adhanSoundId: AdhanSoundId;
-  /** Sabah (imsak) için ayrı ezan; null = genel sesle aynı */
   fajrAdhanSoundId: AdhanSoundId | null;
-  /** Hangi vakitlerde ses/bildirim çalsın */
   enabledPrayers: PrayerAlertMap;
   notificationsEnabled: boolean;
-  /** @deprecated bkz. reminderMinutesList */
+  /** Kalıcı durum çubuğu (Android Foreground Service) */
+  ongoingNotification: boolean;
   reminderMinutesBefore?: number | null;
   reminderMinutesList: number[];
+  /** Ezan sonrası kamet süresi (dk); 0 = kapalı */
+  iqamahMinutes: number;
   calculationMethod: number;
   theme: ThemeMode;
   timeFormat: TimeFormat;
+  language: AppLanguage;
+  kidsMode: boolean;
 }
 
 export type PrimaryTabId = 'home' | 'tracker' | 'qibla' | 'calendar' | 'more';
@@ -82,5 +89,8 @@ export type SecondaryScreenId =
   | 'ramadan'
   | 'zakat'
   | 'mosques'
+  | 'halal'
+  | 'hajj'
+  | 'privacy'
   | 'settings';
 export type TabId = PrimaryTabId | SecondaryScreenId;

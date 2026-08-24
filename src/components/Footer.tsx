@@ -11,9 +11,18 @@ export function Footer() {
         >
           Aladhan API
         </a>{' '}
-        (Diyanet İşleri Başkanlığı hesaplama yöntemi) kullanılarak hesaplanır.
+        (Diyanet hesaplama yöntemi) · Harita verisi ©{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          className="underline hover:text-[var(--text-secondary)]"
+        >
+          OpenStreetMap
+        </a>{' '}
+        contributors
       </p>
-      <p className="mt-1">Vaktin hayırlı olsun 🤲</p>
+      <p className="mt-1">Ezan Vakti Ultra · Vaktin hayırlı olsun 🤲</p>
     </footer>
   );
 }
