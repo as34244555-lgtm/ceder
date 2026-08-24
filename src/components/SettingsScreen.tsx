@@ -25,12 +25,27 @@ import { exportAllData, importAllData } from '../utils/storage';
 import { LANG_OPTIONS } from '../i18n/translations';
 import { PrayerNative } from '../plugins/prayerNative';
 import { InstallPrompt } from './InstallPrompt';
+import { LocationBar } from './LocationBar';
+import { FavoriteCitiesBar } from './FavoriteCitiesBar';
+import type { FavoriteCity } from '../types';
 
 interface SettingsScreenProps {
   settings: AppSettings;
   onChange: (settings: AppSettings) => void;
   notificationPermission: NotificationPermission | 'unsupported';
   onRequestNotificationPermission: () => void;
+  selectedCity: string;
+  onCityChange: (city: string, country: string) => void;
+  onUseLocation: () => void;
+  locationLoading: boolean;
+  activeLabel: string;
+  isUsingGps: boolean;
+  favorites: FavoriteCity[];
+  activeFavoriteCity: string;
+  isCurrentFavorite: boolean;
+  onToggleFavorite: () => void;
+  onRemoveFavorite: (id: string) => void;
+  onSelectFavorite: (city: string, country: string) => void;
 }
 
 const REMINDER_OPTIONS = [5, 10, 15, 30, 45] as const;
@@ -66,6 +81,18 @@ export function SettingsScreen({
   onChange,
   notificationPermission,
   onRequestNotificationPermission,
+  selectedCity,
+  onCityChange,
+  onUseLocation,
+  locationLoading,
+  activeLabel,
+  isUsingGps,
+  favorites,
+  activeFavoriteCity,
+  isCurrentFavorite,
+  onToggleFavorite,
+  onRemoveFavorite,
+  onSelectFavorite,
 }: SettingsScreenProps) {
   const importRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'ok' | 'error'>('idle');
@@ -136,6 +163,29 @@ export function SettingsScreen({
 
   return (
     <div className="w-full flex flex-col gap-4 fade-in-up">
+      <Section title="Konum">
+        <p className="text-xs text-[var(--text-muted)]">
+          Şehir seçin veya GPS ile tam konum kullanın. Ana ekrandaki vakitler buna göre
+          hesaplanır.
+        </p>
+        <LocationBar
+          selectedCity={selectedCity}
+          onCityChange={onCityChange}
+          onUseLocation={onUseLocation}
+          locationLoading={locationLoading}
+          activeLabel={activeLabel}
+          isUsingGps={isUsingGps}
+        />
+        <FavoriteCitiesBar
+          favorites={favorites}
+          activeCity={activeFavoriteCity}
+          isCurrentFavorite={isCurrentFavorite}
+          onSelect={onSelectFavorite}
+          onToggleCurrent={onToggleFavorite}
+          onRemove={onRemoveFavorite}
+        />
+      </Section>
+
       <Section title="Dil">
         <div className="flex items-center gap-2 text-[var(--text-muted)]">
           <Globe className="h-4 w-4 shrink-0" />

@@ -115,7 +115,7 @@ function setMediaSessionMetadata(title: string) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title,
       artist: 'Ezan Vakti Ultra',
-      album: 'Namaz Vakitleri',
+      album: 'Ezan Vakti Ultra',
     });
   } catch {
     // yoksay

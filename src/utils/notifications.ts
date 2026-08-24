@@ -30,8 +30,8 @@ export async function ensureNotificationChannel() {
   try {
     await LocalNotifications.createChannel({
       id: 'ezan-vakitleri',
-      name: 'Ezan Vakitleri',
-      description: 'Namaz vakti ve hatırlatma bildirimleri',
+      name: 'Ezan Vakti Ultra',
+      description: 'Ezan vakti ve hatırlatma bildirimleri',
       importance: 5,
       visibility: 1,
       sound: undefined,

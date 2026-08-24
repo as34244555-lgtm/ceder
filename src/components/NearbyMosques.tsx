@@ -33,7 +33,7 @@ export function NearbyMosques({ location }: NearbyMosquesProps) {
         </div>
         <button
           type="button"
-          onClick={requestPreciseLocation}
+          onClick={() => void requestPreciseLocation({ highAccuracy: true })}
           className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Hassas konum

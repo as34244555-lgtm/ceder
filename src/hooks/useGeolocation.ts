@@ -12,32 +12,41 @@ export function useGeolocation() {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const requestLocation = useCallback(() => {
+  const requestLocation = useCallback((opts?: { highAccuracy?: boolean }) => {
     if (!('geolocation' in navigator)) {
       setStatus('error');
       setError('Tarayıcınız konum servisini desteklemiyor.');
-      return;
+      return Promise.resolve(false);
     }
     setStatus('loading');
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setStatus('success');
-      },
-      (err) => {
-        setStatus('error');
-        setError(
-          err.code === err.PERMISSION_DENIED
-            ? 'Konum izni verilmedi. Lütfen şehir seçerek devam edin.'
-            : 'Konumunuz alınamadı. Lütfen şehir seçerek devam edin.',
-        );
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
-    );
+    const highAccuracy = opts?.highAccuracy ?? true;
+    return new Promise<boolean>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setStatus('success');
+          resolve(true);
+        },
+        (err) => {
+          setStatus('error');
+          setError(
+            err.code === err.PERMISSION_DENIED
+              ? 'Konum izni verilmedi. Ayarlar’dan şehir seçerek devam edin.'
+              : 'Konumunuz alınamadı. Ayarlar’dan şehir seçerek devam edin.',
+          );
+          resolve(false);
+        },
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: highAccuracy ? 20000 : 10000,
+          maximumAge: highAccuracy ? 30_000 : 5 * 60 * 1000,
+        },
+      );
+    });
   }, []);
 
   return { status, coords, error, requestLocation };

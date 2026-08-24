@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './components/Header';
-import { LocationBar } from './components/LocationBar';
-import { FavoriteCitiesBar } from './components/FavoriteCitiesBar';
 import { NextPrayerHero } from './components/NextPrayerHero';
 import { PrayerTimesList } from './components/PrayerTimesList';
 import { StatusBanner } from './components/StatusBanner';
@@ -30,6 +28,7 @@ import { QuranScreen } from './components/QuranScreen';
 import { OnboardingPermissions } from './components/OnboardingPermissions';
 import { PrayerCheckPrompt } from './components/PrayerCheckPrompt';
 import { IqamahBanner } from './components/IqamahBanner';
+import { Capacitor } from '@capacitor/core';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useNow } from './hooks/useNow';
 import { usePrayerData } from './hooks/usePrayerData';
@@ -55,7 +54,7 @@ import {
   saveSelectedCountry,
   saveSettings,
 } from './utils/storage';
-import { t } from './i18n/translations';
+import { PrayerNative } from './plugins/prayerNative';
 import type {
   LocationInfo,
   PrayerTime,
@@ -66,7 +65,7 @@ import type {
 
 const DEFAULT_CITY = 'İstanbul';
 const DEFAULT_COUNTRY = 'Turkey';
-const ONBOARDING_KEY = 'ezan-app:onboarding-v1';
+const ONBOARDING_KEY = 'ezan-app:onboarding-v2';
 
 const SECONDARY_TITLES: Record<SecondaryScreenId, string> = {
   quran: "Kur'an-ı Kerim",
@@ -176,7 +175,7 @@ function App() {
 
   const handleUseLocation = useCallback(() => {
     primeAudio();
-    requestLocation();
+    void requestLocation({ highAccuracy: true });
   }, [requestLocation]);
 
   const handleRequestNotificationPermission = useCallback(async () => {
@@ -185,8 +184,49 @@ function App() {
     return permission;
   }, []);
 
+  const requestCompassPermission = useCallback(async (): Promise<boolean> => {
+    if (typeof DeviceOrientationEvent === 'undefined') return false;
+    type DOE = typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<'granted' | 'denied'>;
+    };
+    const Ctor = DeviceOrientationEvent as DOE;
+    if (typeof Ctor.requestPermission === 'function') {
+      try {
+        return (await Ctor.requestPermission()) === 'granted';
+      } catch {
+        return false;
+      }
+    }
+    // Android / masaüstü: izin diyaloğu yok; dinleyiciyi açmak yeterli
+    return true;
+  }, []);
+
+  const handleRequestAllPermissions = useCallback(async () => {
+    primeAudio();
+    unlockAdhanAudio();
+    const notif = await handleRequestNotificationPermission();
+    const locationGranted = await requestLocation({ highAccuracy: true });
+    const compassGranted = await requestCompassPermission();
+    if (Capacitor.isNativePlatform()) {
+      await PrayerNative.openExactAlarmSettings().catch(() => undefined);
+      await PrayerNative.openBatterySettings().catch(() => undefined);
+      if (notif === 'granted') {
+        await PrayerNative.startOngoing().catch(() => undefined);
+      }
+    }
+    return {
+      notificationsGranted: notif === 'granted',
+      locationGranted: Boolean(locationGranted),
+      compassGranted,
+    };
+  }, [handleRequestNotificationPermission, requestCompassPermission, requestLocation]);
+
   const handleOnboardingComplete = useCallback(
-    (opts: { notificationsGranted: boolean }) => {
+    (opts: {
+      notificationsGranted: boolean;
+      locationGranted: boolean;
+      compassGranted: boolean;
+    }) => {
       saveJSON(ONBOARDING_KEY, true);
       setShowOnboarding(false);
       if (opts.notificationsGranted) {
@@ -223,7 +263,10 @@ function App() {
         <Header
           gregorianDateLabel={today?.gregorianDateLabel}
           hijriDate={today?.hijriDate}
-          title={t(settings.language, 'prayerTimes')}
+          locationLabel={activeTab === 'home' ? location.label : undefined}
+          onLocationClick={
+            activeTab === 'home' ? () => setActiveTab('settings') : undefined
+          }
         />
 
         {secondaryTitle && (
@@ -236,31 +279,6 @@ function App() {
               <RamadanBanner countdown={ramadanCountdown} hijri={today.hijri} />
             )}
             {occasion && !kidsHome && <OccasionBanner occasion={occasion} />}
-
-            {!kidsHome && (
-              <LocationBar
-                selectedCity={selectedCity}
-                onCityChange={handleCityChange}
-                onUseLocation={handleUseLocation}
-                locationLoading={geoStatus === 'loading'}
-                activeLabel={location.label}
-                isUsingGps={location.source === 'gps'}
-              />
-            )}
-
-            {!kidsHome && (
-              <FavoriteCitiesBar
-                favorites={favorites.favorites}
-                activeCity={location.source === 'city' ? location.city : ''}
-                isCurrentFavorite={isCurrentFavorite}
-                onSelect={handleCityChange}
-                onToggleCurrent={() => {
-                  if (!canFavorite) return;
-                  favorites.toggleFavorite(location.city, location.country, location.label);
-                }}
-                onRemove={favorites.removeFavorite}
-              />
-            )}
 
             <StatusBanner
               loading={loading}
@@ -337,6 +355,21 @@ function App() {
             onRequestNotificationPermission={() => {
               void handleRequestNotificationPermission();
             }}
+            selectedCity={selectedCity}
+            onCityChange={handleCityChange}
+            onUseLocation={handleUseLocation}
+            locationLoading={geoStatus === 'loading'}
+            activeLabel={location.label}
+            isUsingGps={location.source === 'gps'}
+            favorites={favorites.favorites}
+            activeFavoriteCity={location.source === 'city' ? location.city : ''}
+            isCurrentFavorite={isCurrentFavorite}
+            onToggleFavorite={() => {
+              if (!canFavorite) return;
+              favorites.toggleFavorite(location.city, location.country, location.label);
+            }}
+            onRemoveFavorite={favorites.removeFavorite}
+            onSelectFavorite={handleCityChange}
           />
         )}
 
@@ -347,14 +380,7 @@ function App() {
 
       {showOnboarding && (
         <OnboardingPermissions
-          onRequestNotifications={async () => {
-            const p = await handleRequestNotificationPermission();
-            return p === 'granted';
-          }}
-          onRequestLocation={() => {
-            primeAudio();
-            requestLocation();
-          }}
+          onRequestAllPermissions={handleRequestAllPermissions}
           onComplete={handleOnboardingComplete}
         />
       )}

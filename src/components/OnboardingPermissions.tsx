@@ -1,24 +1,37 @@
-import { MapPin, Bell, Sparkles } from 'lucide-react';
+import { MapPin, Bell, Compass, Sparkles, Battery, AlarmClock } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 interface OnboardingPermissionsProps {
-  onComplete: (opts: { notificationsGranted: boolean; locationRequested: boolean }) => void;
-  onRequestNotifications: () => Promise<boolean>;
-  onRequestLocation: () => void;
+  onComplete: (opts: {
+    notificationsGranted: boolean;
+    locationGranted: boolean;
+    compassGranted: boolean;
+  }) => void;
+  /** Tek jestte tüm izinleri ister; sonuçları döner. */
+  onRequestAllPermissions: () => Promise<{
+    notificationsGranted: boolean;
+    locationGranted: boolean;
+    compassGranted: boolean;
+  }>;
 }
 
 export function OnboardingPermissions({
   onComplete,
-  onRequestNotifications,
-  onRequestLocation,
+  onRequestAllPermissions,
 }: OnboardingPermissionsProps) {
+  const isNative = Capacitor.isNativePlatform();
+
   const handleAllow = async () => {
-    const notificationsGranted = await onRequestNotifications();
-    onRequestLocation();
-    onComplete({ notificationsGranted, locationRequested: true });
+    const result = await onRequestAllPermissions();
+    onComplete(result);
   };
 
   const handleSkip = () => {
-    onComplete({ notificationsGranted: false, locationRequested: false });
+    onComplete({
+      notificationsGranted: false,
+      locationGranted: false,
+      compassGranted: false,
+    });
   };
 
   return (
@@ -30,14 +43,13 @@ export function OnboardingPermissions({
           </span>
           <div>
             <p className="text-lg font-semibold text-[var(--text-primary)]">Ezan Vakti Ultra</p>
-            <p className="text-xs text-[var(--text-muted)]">İzinler — bir kez sorulur</p>
+            <p className="text-xs text-[var(--text-muted)]">Tüm izinler — bir kez, kalıcı</p>
           </div>
         </div>
 
         <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-          Ezan vakti geldiğinde sesli uyarı ve bildirim gönderebilmemiz, konumunuza göre doğru
-          vakitleri gösterebilmemiz için izinlere ihtiyacımız var. Bu ekran yalnızca bir kez
-          çıkar.
+          Ezan uyarısı, doğru vakitler ve kıble pusulası için gerekli izinleri tek seferde
+          istiyoruz. Bu ekran bir daha sorulmaz.
         </p>
 
         <ul className="flex flex-col gap-3">
@@ -45,20 +57,41 @@ export function OnboardingPermissions({
             <Bell className="h-5 w-5 text-gold-300 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-[var(--text-primary)]">Bildirimler</p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Ezan vakti ve hatırlatmalar — kalıcı izin (bir kez)
-              </p>
+              <p className="text-xs text-[var(--text-muted)]">Ezan vakti ve hatırlatmalar</p>
             </div>
           </li>
           <li className="flex gap-3 rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
             <MapPin className="h-5 w-5 text-gold-300 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-[var(--text-primary)]">Konum</p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Bulunduğunuz yere göre namaz vakitleri
-              </p>
+              <p className="text-xs text-[var(--text-muted)]">Bulunduğunuz yere göre vakitler ve kıble</p>
             </div>
           </li>
+          <li className="flex gap-3 rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+            <Compass className="h-5 w-5 text-gold-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Hareket / pusula</p>
+              <p className="text-xs text-[var(--text-muted)]">Kıble yönünü canlı göstermek için</p>
+            </div>
+          </li>
+          {isNative && (
+            <>
+              <li className="flex gap-3 rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+                <AlarmClock className="h-5 w-5 text-gold-300 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">Tam zamanlı alarm</p>
+                  <p className="text-xs text-[var(--text-muted)]">Vakitinde ezan için (Android)</p>
+                </div>
+              </li>
+              <li className="flex gap-3 rounded-2xl bg-[var(--surface-soft)] px-4 py-3">
+                <Battery className="h-5 w-5 text-gold-300 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">Pil istisnası</p>
+                  <p className="text-xs text-[var(--text-muted)]">Arka planda çalışmaya devam etsin</p>
+                </div>
+              </li>
+            </>
+          )}
         </ul>
 
         <div className="flex flex-col gap-2">
@@ -67,7 +100,7 @@ export function OnboardingPermissions({
             onClick={() => void handleAllow()}
             className="w-full rounded-2xl bg-gold-400/90 text-night-950 py-3.5 text-sm font-semibold hover:bg-gold-300 transition"
           >
-            İzin ver ve devam et
+            Tüm izinleri ver
           </button>
           <button
             type="button"

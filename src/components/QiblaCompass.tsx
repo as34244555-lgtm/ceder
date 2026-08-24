@@ -1,11 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Landmark, LocateFixed, Compass as CompassIcon, Loader2, MapPin } from 'lucide-react';
+import { useMemo, useEffect } from 'react';
+import { Landmark, Compass as CompassIcon, Loader2 } from 'lucide-react';
 import { useQiblaLocation } from '../hooks/useQiblaLocation';
 import { useCompassHeading } from '../hooks/useCompassHeading';
 import { calculateDistanceToKaabaKm, calculateQiblaBearing } from '../utils/qibla';
-import { geocodeCity } from '../api/geocode';
-import { primeAudio } from '../utils/sound';
-import { TURKISH_CITIES } from '../data/cities';
 import type { LocationInfo } from '../types';
 
 interface QiblaCompassProps {
@@ -13,11 +10,8 @@ interface QiblaCompassProps {
 }
 
 export function QiblaCompass({ location }: QiblaCompassProps) {
-  const { coords, resolving, resolveError, requestPreciseLocation, setManualCoords } =
-    useQiblaLocation(location);
-  const { heading, permission, requestAccess } = useCompassHeading();
-  const [fallbackCity, setFallbackCity] = useState('');
-  const [fallbackLoading, setFallbackLoading] = useState(false);
+  const { coords, resolving, resolveError } = useQiblaLocation(location);
+  const { heading, permission, supported, usingAbsolute, requestAccess } = useCompassHeading();
 
   const qibla = useMemo(() => {
     if (!coords) return null;
@@ -27,21 +21,27 @@ export function QiblaCompass({ location }: QiblaCompassProps) {
     };
   }, [coords]);
 
-  const handleUseLocation = () => {
-    primeAudio();
-    requestPreciseLocation();
-  };
-
-  const handleFallbackCity = async (city: string) => {
-    setFallbackCity(city);
-    setFallbackLoading(true);
-    const result = await geocodeCity(city, 'Turkey');
-    setFallbackLoading(false);
-    if (result) setManualCoords(result);
-  };
+  // İzin verilmişse veya gerekmiyorsa dinleyiciyi aç
+  useEffect(() => {
+    if (permission === 'unnecessary' || permission === 'granted') {
+      void requestAccess();
+    }
+  }, [permission, requestAccess]);
 
   const needsCompassPermission = permission === 'unknown' || permission === 'denied';
-  const diskRotation = heading !== null ? -heading : 0;
+  const live = heading !== null && qibla !== null;
+  /** Cihaza göre kıble oku: yukarı = telefonun bakış yönü */
+  const needleRotation = live ? qibla.bearing - heading : (qibla?.bearing ?? 0);
+  const turnDelta = live ? ((((needleRotation % 360) + 540) % 360) - 180) : 0;
+  const aligned = live && Math.abs(turnDelta) < 12;
+
+  const turnHint = (() => {
+    if (!live) return null;
+    if (aligned) return 'Kıble yönündesiniz';
+    return turnDelta > 0
+      ? `${Math.round(Math.abs(turnDelta))}° sağa dönün`
+      : `${Math.round(Math.abs(turnDelta))}° sola dönün`;
+  })();
 
   return (
     <div className="w-full flex flex-col items-center gap-6 fade-in-up">
@@ -60,37 +60,9 @@ export function QiblaCompass({ location }: QiblaCompassProps) {
             ) : (
               <>
                 <p className="text-[var(--text-secondary)] text-sm max-w-xs">
-                  Kıble yönünü hesaplayabilmek için konumunuza ihtiyacımız var.
+                  Kıble için konum gerekli. Ayarlar’dan şehir seçin veya GPS izni verin.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleUseLocation}
-                  className="flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-medium bg-gold-400/90 text-night-950 hover:bg-gold-300 active:scale-[0.98] transition"
-                >
-                  <LocateFixed className="h-4 w-4" />
-                  Daha Hassas Konum İçin GPS Kullan
-                </button>
                 {resolveError && <p className="text-red-300 text-xs max-w-xs">{resolveError}</p>}
-
-                <div className="flex items-center gap-2 w-full max-w-xs mt-2 glass-card rounded-2xl px-3 py-2.5">
-                  <MapPin className="h-4 w-4 text-gold-400 shrink-0" />
-                  <select
-                    value={fallbackCity}
-                    onChange={(e) => void handleFallbackCity(e.target.value)}
-                    className="bg-transparent text-[var(--text-primary)] text-sm outline-none w-full cursor-pointer [&>option]:text-black"
-                    aria-label="Şehir seçerek kıbleyi hesapla"
-                  >
-                    <option value="" disabled>
-                      Veya şehir seçin…
-                    </option>
-                    {TURKISH_CITIES.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-                  {fallbackLoading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
-                </div>
               </>
             )}
           </div>
@@ -100,49 +72,32 @@ export function QiblaCompass({ location }: QiblaCompassProps) {
               <div className="absolute inset-0 rounded-full border border-[var(--border-soft-strong)]" />
               <div className="absolute inset-4 rounded-full border border-[var(--border-soft)]" />
 
-              <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1 z-10">
-                <div className="h-0 w-0 border-x-8 border-x-transparent border-b-[14px] border-b-gold-400" />
+              {/* Telefon yönü (sabit üst ok) */}
+              <div className="absolute left-1/2 top-1 -translate-x-1/2 z-20 flex flex-col items-center">
+                <div className="h-0 w-0 border-x-[7px] border-x-transparent border-b-[12px] border-b-[var(--text-primary)]" />
+                <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
+                  ön
+                </span>
               </div>
 
+              {/* Kıble oku — heading’e göre döner */}
               <div
-                className="absolute inset-0 transition-transform duration-200 ease-out"
-                style={{ transform: `rotate(${diskRotation}deg)` }}
+                className="absolute inset-0 transition-transform duration-150 ease-out"
+                style={{ transform: `rotate(${needleRotation}deg)` }}
               >
-                {[
-                  { label: 'K', angle: 0 },
-                  { label: 'D', angle: 90 },
-                  { label: 'G', angle: 180 },
-                  { label: 'B', angle: 270 },
-                ].map(({ label, angle }) => (
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[108px] flex flex-col items-center">
                   <div
-                    key={label}
-                    className="absolute left-1/2 top-1/2 text-sm font-semibold text-[var(--text-secondary)]"
-                    style={{
-                      transform: `rotate(${angle}deg) translate(0, -110px) rotate(${-angle}deg)`,
-                    }}
+                    className={`flex h-12 w-12 items-center justify-center rounded-full text-night-950 shadow-lg ${
+                      aligned ? 'bg-emerald-400 pulse-glow' : 'bg-gold-400 pulse-glow'
+                    }`}
                   >
-                    {label}
+                    <Landmark className="h-5 w-5" />
                   </div>
-                ))}
-
-                {qibla && (
-                  <div
-                    className="absolute left-1/2 top-1/2 flex flex-col items-center gap-1"
-                    style={{
-                      transform: `rotate(${qibla.bearing}deg) translate(0, -95px) rotate(${-qibla.bearing}deg)`,
-                    }}
-                  >
-                    <div
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-gold-400 text-night-950 shadow-lg pulse-glow"
-                      style={{ transform: `rotate(${qibla.bearing}deg)` }}
-                    >
-                      <Landmark className="h-5 w-5" />
-                    </div>
-                  </div>
-                )}
-
-                <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--border-soft-strong)]" />
+                  <div className="mt-1 h-16 w-1 rounded-full bg-gradient-to-b from-gold-400 to-transparent" />
+                </div>
               </div>
+
+              <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--border-soft-strong)] z-10" />
             </div>
 
             {qibla && (
@@ -153,13 +108,22 @@ export function QiblaCompass({ location }: QiblaCompassProps) {
                 <p className="text-xs text-[var(--text-muted)] mt-1">
                   Kâbe'ye kuş uçuşu {Math.round(qibla.distanceKm).toLocaleString('tr-TR')} km
                 </p>
+                {turnHint && (
+                  <p
+                    className={`text-sm font-medium mt-2 ${
+                      aligned ? 'text-emerald-300' : 'text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    {turnHint}
+                  </p>
+                )}
               </div>
             )}
 
-            {needsCompassPermission && (
+            {needsCompassPermission && supported && (
               <button
                 type="button"
-                onClick={requestAccess}
+                onClick={() => void requestAccess()}
                 className="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium bg-[var(--accent-soft-bg)] text-[var(--accent-soft-text)] border border-[var(--accent-soft-border)] hover:brightness-110 transition"
               >
                 <CompassIcon className="h-4 w-4" />
@@ -169,19 +133,16 @@ export function QiblaCompass({ location }: QiblaCompassProps) {
 
             {heading === null && !needsCompassPermission && (
               <p className="text-xs text-[var(--text-muted)] text-center max-w-xs">
-                Cihazınız pusula verisi göndermiyor; ok, kuzeye göre sabit kıble açısını
-                gösteriyor. Telefonunuzu düz tutup yavaşça 8 çizerek kalibre edebilirsiniz.
+                Pusula verisi bekleniyor. Telefonu yatay tutun ve yavaşça 8 çizin. Konum Ayarlar’dan
+                güncellenebilir.
               </p>
             )}
 
-            <button
-              type="button"
-              onClick={handleUseLocation}
-              className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
-            >
-              <LocateFixed className="h-3.5 w-3.5" />
-              Hassas GPS konumuyla güncelle
-            </button>
+            {heading !== null && !usingAbsolute && (
+              <p className="text-[10px] text-[var(--text-faint)] text-center max-w-xs">
+                Göreli sensör kullanılıyor; sapma olursa cihazı kalibre edin.
+              </p>
+            )}
           </>
         )}
       </div>
