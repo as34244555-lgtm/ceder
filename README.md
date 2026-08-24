@@ -34,6 +34,22 @@ Esmaü'l-Hüsna içeren; **PWA** olarak kurulan ve **Capacitor** ile Play Store'
 - Ana ekrana eklenebilir, çevrimdışı çalışır
 - Capacitor Android projesi (`android/`) — Play Store `.aab` üretimi için bkz. [PLAY_STORE.md](./PLAY_STORE.md)
 
+### Android Studio (Next.js gerekmez)
+
+Bu uygulama **Next.js değil**; React + Vite + Capacitor.
+
+1. Repoyu bilgisayara alın (GitHub Clone veya ZIP).
+2. Web arayüzünü gömmek için (bir kez):
+   ```bash
+   npm ci
+   npm run build
+   npx cap sync android
+   ```
+3. Android Studio → **Open** → `android` klasörünü seçin.
+4. Gradle sync → **Build → Build APK(s)** veya Run.
+
+Sadece APK denemek için `android/` klasörü (içinde `assets/public` doluysa) doğrudan da açılabilir.
+
 ## Geliştirme
 
 ```bash
