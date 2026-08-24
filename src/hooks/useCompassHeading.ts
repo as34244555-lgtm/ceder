@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { PrayerNative } from '../plugins/prayerNative';
 
 type PermissionState = 'unknown' | 'granted' | 'denied' | 'unnecessary' | 'unsupported';
 
@@ -10,21 +12,12 @@ type DeviceOrientationEventConstructorWithPermission = typeof DeviceOrientationE
   requestPermission?: () => Promise<'granted' | 'denied'>;
 };
 
-interface AbsoluteOrientationSensorLike {
-  quaternion: [number, number, number, number];
-  start: () => void;
-  stop: () => void;
-  addEventListener: (type: 'reading' | 'error', listener: () => void) => void;
-  removeEventListener: (type: 'reading' | 'error', listener: () => void) => void;
+function normalizeDeg(deg: number): number {
+  return ((deg % 360) + 360) % 360;
 }
 
-declare global {
-  interface Window {
-    AbsoluteOrientationSensor?: new (options?: {
-      frequency?: number;
-      referenceFrame?: 'device' | 'screen';
-    }) => AbsoluteOrientationSensorLike;
-  }
+function shortestDelta(from: number, to: number): number {
+  return ((((to - from) % 360) + 540) % 360) - 180;
 }
 
 function getScreenAngle(): number {
@@ -35,141 +28,112 @@ function getScreenAngle(): number {
   return typeof legacy === 'number' ? legacy : 0;
 }
 
-/** Derece farkını −180…180 aralığına sıkıştırır (yumuşatma için). */
-function shortestDelta(from: number, to: number): number {
-  return ((((to - from) % 360) + 540) % 360) - 180;
-}
-
-function normalizeDeg(deg: number): number {
-  return ((deg % 360) + 360) % 360;
-}
-
 /**
- * Quaternion → pusula yönü (0 = kuzey, saat yönünde).
- * AbsoluteOrientationSensor (Earth frame) için.
- */
-function quaternionToHeading([x, y, z, w]: [number, number, number, number]): number {
-  const siny = 2 * (w * z + x * y);
-  const cosy = 1 - 2 * (y * y + z * z);
-  const yaw = Math.atan2(siny, cosy) * (180 / Math.PI);
-  return normalizeDeg(-yaw);
-}
-
-/**
- * Cihazın pusula yönünü (0 = kuzey) okur.
- * Öncelik: AbsoluteOrientationSensor → deviceorientationabsolute → deviceorientation / iOS webkit.
+ * Pusula yönü (0 = manyetik/gerçek kuzey, saat yönünde).
+ * Android Capacitor: yerel SensorManager.
+ * Web / iOS WebView: DeviceOrientation (+ isteğe bağlı kalibrasyon ofseti).
  */
 export function useCompassHeading() {
   const [heading, setHeading] = useState<number | null>(null);
   const [permission, setPermission] = useState<PermissionState>('unknown');
   const [supported, setSupported] = useState(true);
-  const [usingAbsolute, setUsingAbsolute] = useState(false);
-  const listenerAttachedRef = useRef(false);
-  const sensorRef = useRef<AbsoluteOrientationSensorLike | null>(null);
-  const smoothedRef = useRef<number | null>(null);
-  const absoluteModeRef = useRef(false);
+  const [source, setSource] = useState<'native' | 'absolute' | 'webkit' | 'relative' | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [calOffset, setCalOffset] = useState(0);
 
-  const applyHeading = useCallback((raw: number) => {
-    const withScreen = normalizeDeg(raw - getScreenAngle());
+  const smoothedRef = useRef<number | null>(null);
+  const rawRef = useRef<number | null>(null);
+  const listenerAttachedRef = useRef(false);
+  const nativeActiveRef = useRef(false);
+  const calOffsetRef = useRef(0);
+
+  useEffect(() => {
+    calOffsetRef.current = calOffset;
+  }, [calOffset]);
+
+  const applyRawHeading = useCallback((raw: number, src: typeof source) => {
+    rawRef.current = raw;
+    const adjusted = normalizeDeg(raw + calOffsetRef.current);
     const prev = smoothedRef.current;
     const next =
-      prev === null ? withScreen : normalizeDeg(prev + shortestDelta(prev, withScreen) * 0.35);
+      prev === null ? adjusted : normalizeDeg(prev + shortestDelta(prev, adjusted) * 0.45);
     smoothedRef.current = next;
     setHeading(next);
+    if (src) setSource(src);
   }, []);
 
   const handleOrientation = useCallback(
     (event: Event) => {
-      if (absoluteModeRef.current && sensorRef.current) return;
+      if (nativeActiveRef.current) return;
       const e = event as DeviceOrientationEventWithWebkit;
 
       if (typeof e.webkitCompassHeading === 'number' && !Number.isNaN(e.webkitCompassHeading)) {
-        applyHeading(e.webkitCompassHeading);
+        // iOS: zaten ekran-kuzey; screen angle ekleme
+        applyRawHeading(e.webkitCompassHeading, 'webkit');
         return;
       }
 
       if (e.alpha === null || e.alpha === undefined || Number.isNaN(e.alpha)) return;
 
-      const isAbsolute =
-        event.type === 'deviceorientationabsolute' || e.absolute === true;
-      if (!isAbsolute && absoluteModeRef.current) return;
-
-      // Mutlak alpha: 0 = kuzey. Göreli alpha güvenilmez; yine de göster (uyarı UI'da).
-      applyHeading(360 - e.alpha);
-      if (isAbsolute) setUsingAbsolute(true);
+      const isAbsolute = event.type === 'deviceorientationabsolute' || e.absolute === true;
+      // Web standard: 360 - alpha ≈ kuzey; ekran dönüşünü telafi et
+      const raw = normalizeDeg(360 - e.alpha - getScreenAngle());
+      applyRawHeading(raw, isAbsolute ? 'absolute' : 'relative');
     },
-    [applyHeading],
+    [applyRawHeading],
   );
 
-  const stopSensor = useCallback(() => {
-    if (sensorRef.current) {
-      try {
-        sensorRef.current.stop();
-      } catch {
-        // ignore
-      }
-      sensorRef.current = null;
-    }
-  }, []);
-
-  const tryAbsoluteSensor = useCallback(async (): Promise<boolean> => {
-    if (typeof window.AbsoluteOrientationSensor !== 'function') return false;
-    try {
-      if (navigator.permissions?.query) {
-        const results = await Promise.all(
-          ['accelerometer', 'gyroscope', 'magnetometer'].map((name) =>
-            navigator.permissions.query({ name: name as PermissionName }).catch(() => null),
-          ),
-        );
-        if (results.some((r) => r?.state === 'denied')) return false;
-      }
-
-      const Sensor = window.AbsoluteOrientationSensor;
-      const sensor = new Sensor({ frequency: 30, referenceFrame: 'device' });
-      await new Promise<void>((resolve, reject) => {
-        const onError = () => reject(new Error('sensor-error'));
-        sensor.addEventListener('error', onError);
-        sensor.addEventListener('reading', () => {
-          absoluteModeRef.current = true;
-          setUsingAbsolute(true);
-          applyHeading(quaternionToHeading(sensor.quaternion));
-        });
-        try {
-          sensor.start();
-          sensorRef.current = sensor;
-          // Kısa süre içinde okuma gelmezse başarısız say
-          window.setTimeout(() => resolve(), 400);
-        } catch (err) {
-          reject(err);
-        }
-      });
-      return Boolean(sensorRef.current);
-    } catch {
-      stopSensor();
-      return false;
-    }
-  }, [applyHeading, stopSensor]);
-
-  const attachOrientationListener = useCallback(() => {
+  const attachWebListeners = useCallback(() => {
     if (listenerAttachedRef.current) return;
     listenerAttachedRef.current = true;
-    // Önce mutlak olay; yoksa klasik
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);
   }, [handleOrientation]);
 
-  const requestAccess = useCallback(async () => {
+  const detachWebListeners = useCallback(() => {
+    if (!listenerAttachedRef.current) return;
+    window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.removeEventListener('deviceorientation', handleOrientation, true);
+    listenerAttachedRef.current = false;
+  }, [handleOrientation]);
+
+  const startNative = useCallback(async (): Promise<boolean> => {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      const avail = await PrayerNative.isCompassAvailable();
+      if (!avail.value) return false;
+
+      await PrayerNative.removeAllListeners().catch(() => undefined);
+      await PrayerNative.addListener('compassHeading', (ev) => {
+        nativeActiveRef.current = true;
+        applyRawHeading(ev.heading, 'native');
+        if (typeof ev.accuracy === 'number') setAccuracy(ev.accuracy);
+      });
+      await PrayerNative.addListener('compassAccuracy', (ev) => {
+        setAccuracy(ev.accuracy);
+      });
+      await PrayerNative.startCompass();
+      nativeActiveRef.current = true;
+      setPermission('granted');
+      setSupported(true);
+      setSource('native');
+      return true;
+    } catch {
+      nativeActiveRef.current = false;
+      await PrayerNative.stopCompass().catch(() => undefined);
+      return false;
+    }
+  }, [applyRawHeading]);
+
+  const requestAccess = useCallback(async (): Promise<boolean> => {
+    // 1) Native Android/iOS Capacitor
+    if (await startNative()) return true;
+
+    // 2) Web / WebView DeviceOrientation
     if (typeof window === 'undefined') {
       setSupported(false);
       setPermission('unsupported');
       return false;
-    }
-
-    const sensorOk = await tryAbsoluteSensor();
-    if (sensorOk) {
-      setPermission('granted');
-      attachOrientationListener();
-      return true;
     }
 
     if (typeof DeviceOrientationEvent === 'undefined') {
@@ -182,51 +146,90 @@ export function useCompassHeading() {
     if (typeof DOE.requestPermission === 'function') {
       try {
         const result = await DOE.requestPermission();
-        if (result === 'granted') {
-          setPermission('granted');
-          attachOrientationListener();
-          return true;
+        if (result !== 'granted') {
+          setPermission('denied');
+          return false;
         }
-        setPermission('denied');
-        return false;
+        setPermission('granted');
       } catch {
         setPermission('denied');
         return false;
       }
+    } else {
+      setPermission('unnecessary');
     }
 
-    setPermission('unnecessary');
-    attachOrientationListener();
+    attachWebListeners();
+    setSupported(true);
     return true;
-  }, [attachOrientationListener, tryAbsoluteSensor]);
+  }, [attachWebListeners, startNative]);
+
+  /** Kullanıcı telefonu kuzeye tutup bastığında ofseti sıfırlar (göreli sensör için). */
+  const calibrateToNorth = useCallback(() => {
+    const raw = rawRef.current;
+    if (raw === null) return false;
+    const offset = normalizeDeg(-raw);
+    calOffsetRef.current = offset;
+    setCalOffset(offset);
+    smoothedRef.current = 0;
+    setHeading(0);
+    return true;
+  }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      setSupported(false);
-      setPermission('unsupported');
-      return;
-    }
-    if (typeof DeviceOrientationEvent === 'undefined' && !window.AbsoluteOrientationSensor) {
-      setSupported(false);
-      setPermission('unsupported');
-      return;
-    }
-    const DOE = DeviceOrientationEvent as DeviceOrientationEventConstructorWithPermission | undefined;
-    if (DOE && typeof DOE.requestPermission !== 'function') {
-      setPermission('unnecessary');
-      void tryAbsoluteSensor().finally(() => {
-        attachOrientationListener();
-      });
-    }
-    return () => {
-      stopSensor();
-      if (listenerAttachedRef.current) {
-        window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
-        window.removeEventListener('deviceorientation', handleOrientation, true);
-        listenerAttachedRef.current = false;
+    let cancelled = false;
+
+    const boot = async () => {
+      if (Capacitor.isNativePlatform()) {
+        const ok = await startNative();
+        if (!cancelled && !ok) {
+          // Native yoksa web yedek
+          const DOE = DeviceOrientationEvent as DeviceOrientationEventConstructorWithPermission | undefined;
+          if (DOE && typeof DOE.requestPermission !== 'function') {
+            setPermission('unnecessary');
+            attachWebListeners();
+          } else {
+            setPermission('unknown');
+          }
+        }
+        return;
+      }
+
+      if (typeof DeviceOrientationEvent === 'undefined') {
+        setSupported(false);
+        setPermission('unsupported');
+        return;
+      }
+      const DOE = DeviceOrientationEvent as DeviceOrientationEventConstructorWithPermission;
+      if (typeof DOE.requestPermission !== 'function') {
+        setPermission('unnecessary');
+        attachWebListeners();
+      } else {
+        setPermission('unknown');
       }
     };
-  }, [attachOrientationListener, handleOrientation, stopSensor, tryAbsoluteSensor]);
 
-  return { heading, permission, supported, usingAbsolute, requestAccess };
+    void boot();
+
+    return () => {
+      cancelled = true;
+      detachWebListeners();
+      if (nativeActiveRef.current) {
+        void PrayerNative.stopCompass().catch(() => undefined);
+        void PrayerNative.removeAllListeners().catch(() => undefined);
+        nativeActiveRef.current = false;
+      }
+    };
+  }, [attachWebListeners, detachWebListeners, startNative]);
+
+  return {
+    heading,
+    permission,
+    supported,
+    source,
+    accuracy,
+    requestAccess,
+    calibrateToNorth,
+    hasCalibration: calOffset !== 0,
+  };
 }
