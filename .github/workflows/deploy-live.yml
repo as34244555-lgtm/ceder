@@ -1,0 +1,85 @@
+name: Deploy Live (Surge + gh-pages)
+
+on:
+  push:
+    branches: [main, cursor/ezan-vakitleri-app-b140]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: live-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Prepare dist
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  surge:
+    needs: build
+    runs-on: ubuntu-latest
+    # Skip silently until SURGE_LOGIN + SURGE_TOKEN repo secrets exist
+    if: ${{ vars.ENABLE_SURGE != 'false' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publish to Surge
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+        run: |
+          if [ -z "$SURGE_TOKEN" ] || [ -z "$SURGE_LOGIN" ]; then
+            echo "SURGE_LOGIN / SURGE_TOKEN eksik — Surge atlandı."
+            echo "Repo → Settings → Secrets → Actions altına ekleyin."
+            exit 0
+          fi
+          npx --yes surge ./dist ezan-vakti.surge.sh --token "$SURGE_TOKEN"
+
+  gh-pages-branch:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: /tmp/dist
+      - name: Publish gh-pages branch
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a /tmp/dist/. .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "Live deploy ${GITHUB_SHA}"
+          git push origin HEAD:gh-pages

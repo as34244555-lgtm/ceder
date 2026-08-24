@@ -61,20 +61,33 @@ Detaylar ve **“web sınırları .aab ile kalkar mı?”** cevabı: [PLAY_STORE
 
 React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capacitor 8 · Aladhan API · OpenStreetMap Overpass
 
-## Canlı site (kalıcı)
+## Canlı site
 
-**https://ezan-vakti.surge.sh**
+Hedef adres: **https://ezan-vakti.surge.sh**
 
-Yeniden yayınlamak için:
+Her push’ta `.github/workflows/deploy-live.yml` şunu yapar:
 
-```bash
-npm run build
-npx surge ./dist ezan-vakti.surge.sh
-```
+1. `npm run build`
+2. `gh-pages` dalını günceller (yedek yayın)
+3. Repo secret’ları `SURGE_LOGIN` + `SURGE_TOKEN` varsa Surge’e yayınlar
 
-(Surge hesabı: `aakdniz935@gmail.com` — şifre sıfırlama: https://surge.sh)
+### Surge’ü bir kez bağlama
 
-GitHub Pages yedek: `gh-pages` dalı hazır. Repo → Settings → Pages → Deploy from branch → `gh-pages` / `/` seçilince:
-`https://as34244555-lgtm.github.io/ceder/`
+1. https://surge.sh hesabı (`aakdniz935@gmail.com`) → token alın (`npx surge token`)
+2. Repo → Settings → Secrets and variables → Actions:
+   - `SURGE_LOGIN` = e-posta
+   - `SURGE_TOKEN` = token
+3. Actions → **Deploy Live** → Run workflow
+
+Manuel: `npm run deploy:web`
+
+### GitHub Pages (yedek URL)
+
+`gh-pages` dalı her zaman güncel Ultra build’i tutar. Bir kez açın:
+
+Repo → Settings → Pages → Deploy from a branch → `gh-pages` / `/` → Save  
+Adres: `https://as34244555-lgtm.github.io/ceder/`
+
+PWA önbelleği yüzünden eski sürüm görürseniz gizli pencerede açın veya site verisini temizleyin.
 
 Vaktin hayırlı olsun 🤲
