@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import {
   Bell,
   BellOff,
@@ -8,11 +10,20 @@ import {
   Sun,
   MonitorSmartphone,
   Square,
+  Download,
+  Upload,
+  Battery,
+  AlarmClock,
+  Baby,
+  Globe,
 } from 'lucide-react';
 import type { AdhanSoundId, AdhanSoundMode, AppSettings, ThemeMode, TrackablePrayerKey } from '../types';
 import { CALCULATION_METHODS } from '../data/methods';
 import { ADHAN_SOUNDS } from '../data/adhanSounds';
 import { playFullAdhan, playPrayerChime, primeAudio, stopFullAdhan, unlockAdhanAudio } from '../utils/sound';
+import { exportAllData, importAllData } from '../utils/storage';
+import { LANG_OPTIONS } from '../i18n/translations';
+import { PrayerNative } from '../plugins/prayerNative';
 import { InstallPrompt } from './InstallPrompt';
 
 interface SettingsScreenProps {
@@ -23,6 +34,7 @@ interface SettingsScreenProps {
 }
 
 const REMINDER_OPTIONS = [5, 10, 15, 30, 45] as const;
+const IQAMAH_OPTIONS = [0, 10, 15, 20, 30] as const;
 
 const PRAYER_LABELS: { key: TrackablePrayerKey; label: string }[] = [
   { key: 'imsak', label: 'İmsak / Sabah' },
@@ -55,6 +67,10 @@ export function SettingsScreen({
   notificationPermission,
   onRequestNotificationPermission,
 }: SettingsScreenProps) {
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<'idle' | 'ok' | 'error'>('idle');
+  const isNative = Capacitor.isNativePlatform();
+
   const toggleSound = () => onChange({ ...settings, soundEnabled: !settings.soundEnabled });
 
   const toggleNotifications = () => {
@@ -62,6 +78,16 @@ export function SettingsScreen({
       onRequestNotificationPermission();
     }
     onChange({ ...settings, notificationsEnabled: !settings.notificationsEnabled });
+  };
+
+  const toggleOngoing = () => {
+    const next = !settings.ongoingNotification;
+    onChange({ ...settings, ongoingNotification: next });
+    if (next && settings.notificationsEnabled) {
+      void PrayerNative.startOngoing().catch(() => undefined);
+    } else {
+      void PrayerNative.stopOngoing().catch(() => undefined);
+    }
   };
 
   const toggleReminder = (minutes: number) => {
@@ -84,8 +110,55 @@ export function SettingsScreen({
     playFullAdhan(true, 'Ezan Önizleme', id ?? settings.adhanSoundId);
   };
 
+  const handleExport = () => {
+    const json = exportAllData();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ezan-vakti-yedek-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const ok = importAllData(String(reader.result ?? ''));
+      setImportStatus(ok ? 'ok' : 'error');
+      if (ok) window.location.reload();
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   return (
     <div className="w-full flex flex-col gap-4 fade-in-up">
+      <Section title="Dil">
+        <div className="flex items-center gap-2 text-[var(--text-muted)]">
+          <Globe className="h-4 w-4 shrink-0" />
+          <p className="text-xs">Uygulama dili (bazı ekranlar kademeli güncellenir)</p>
+        </div>
+        <div className="flex gap-2">
+          {LANG_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onChange({ ...settings, language: opt.id })}
+              className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition ${
+                settings.language === opt.id
+                  ? 'bg-gold-400/90 text-night-950'
+                  : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Görünüm">
         <div className="flex gap-2">
           {THEME_OPTIONS.map((opt) => {
@@ -110,6 +183,24 @@ export function SettingsScreen({
         </div>
       </Section>
 
+      <Section title="Çocuk Modu">
+        <button
+          type="button"
+          onClick={() => onChange({ ...settings, kidsMode: !settings.kidsMode })}
+          className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+            settings.kidsMode
+              ? 'bg-[var(--accent-soft-bg)] text-[var(--accent-soft-text)] border border-[var(--accent-soft-border)]'
+              : 'bg-[var(--surface-soft)] text-[var(--text-muted)] border border-[var(--border-soft)]'
+          }`}
+        >
+          <Baby className="h-4 w-4" />
+          Çocuk modu {settings.kidsMode ? 'açık' : 'kapalı'}
+        </button>
+        <p className="text-xs text-[var(--text-muted)]">
+          Basitleştirilmiş arayüz ve daha büyük dokunma alanları.
+        </p>
+      </Section>
+
       <Section title="Saat Formatı">
         <div className="flex gap-2">
           {(['24', '12'] as const).map((format) => (
@@ -124,6 +215,28 @@ export function SettingsScreen({
               }`}
             >
               {format === '24' ? '24 Saat' : '12 Saat (ÖÖ/ÖS)'}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Kamet Süresi">
+        <p className="text-xs text-[var(--text-muted)]">
+          Ezan sonrası kamet bildirimi için dakika. 0 = kapalı.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {IQAMAH_OPTIONS.map((minutes) => (
+            <button
+              key={minutes}
+              type="button"
+              onClick={() => onChange({ ...settings, iqamahMinutes: minutes })}
+              className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                settings.iqamahMinutes === minutes
+                  ? 'bg-gold-400/90 text-night-950'
+                  : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
+              }`}
+            >
+              {minutes === 0 ? 'Kapalı' : `${minutes} dk`}
             </button>
           ))}
         </div>
@@ -170,8 +283,8 @@ export function SettingsScreen({
           {settings.adhanSoundMode === 'adhan' && (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-[var(--text-muted)]">
-                Yüksek kaliteli kayıtlar (Mekke / Medine / klasik müezzin). Eski düşük kaliteli ses
-                kullanılmaz.
+                Yüksek kaliteli kayıtlar (Mekke / Medine / Kudüs / KLCC / Mishary). Eski düşük
+                kaliteli ses kullanılmaz.
               </p>
               {ADHAN_SOUNDS.map((sound) => {
                 const active = settings.adhanSoundId === sound.id;
@@ -329,6 +442,43 @@ export function SettingsScreen({
         <p className="text-xs text-[var(--text-muted)]">
           Play Store / Android sürümünde Local Notifications ile vakitler önceden zamanlanır.
         </p>
+
+        <button
+          type="button"
+          onClick={toggleOngoing}
+          className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+            settings.ongoingNotification
+              ? 'bg-[var(--accent-soft-bg)] text-[var(--accent-soft-text)] border border-[var(--accent-soft-border)]'
+              : 'bg-[var(--surface-soft)] text-[var(--text-muted)] border border-[var(--border-soft)]'
+          }`}
+        >
+          <Bell className="h-4 w-4" />
+          Kalıcı durum bildirimi {settings.ongoingNotification ? 'açık' : 'kapalı'}
+        </button>
+        <p className="text-xs text-[var(--text-muted)]">
+          Android’de sonraki vakitleri bildirim çubuğunda gösterir (foreground service).
+        </p>
+
+        {isNative && (
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => void PrayerNative.openBatterySettings()}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-soft-strong)] transition"
+            >
+              <Battery className="h-4 w-4" />
+              Pil optimizasyonu ayarları
+            </button>
+            <button
+              type="button"
+              onClick={() => void PrayerNative.openExactAlarmSettings()}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-soft-strong)] transition"
+            >
+              <AlarmClock className="h-4 w-4" />
+              Tam zamanlı alarm izni
+            </button>
+          </div>
+        )}
       </Section>
 
       <Section title="Hesaplama Yöntemi">
@@ -346,6 +496,40 @@ export function SettingsScreen({
         <p className="text-xs text-[var(--text-muted)]">
           Türkiye için varsayılan olarak Diyanet İşleri Başkanlığı yöntemi önerilir.
         </p>
+      </Section>
+
+      <Section title="Yedekle / Geri Yükle">
+        <p className="text-xs text-[var(--text-muted)]">
+          Ayarlar, namaz takibi, Kur’an yer imi ve hatim verilerini JSON dosyası olarak kaydedin.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-gold-400/90 text-night-950 hover:brightness-110 transition"
+          >
+            <Download className="h-4 w-4" />
+            Dışa aktar
+          </button>
+          <button
+            type="button"
+            onClick={() => importRef.current?.click()}
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium bg-[var(--surface-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-soft-strong)] transition"
+          >
+            <Upload className="h-4 w-4" />
+            İçe aktar
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </div>
+        {importStatus === 'error' && (
+          <p className="text-xs text-red-300/90">Yedek dosyası okunamadı. Geçerli bir JSON seçin.</p>
+        )}
       </Section>
 
       <Section title="Uygulama">
