@@ -75,7 +75,6 @@ export interface AppSettings {
 
 export type PrimaryTabId = 'home' | 'tracker' | 'qibla' | 'calendar' | 'more';
 export type SecondaryScreenId =
-  | 'assistant'
   | 'quran'
   | 'zikir'
   | 'esma'

@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadJSON, saveJSON } from '../utils/storage';
 import type { TrackablePrayerKey } from '../types';
 
 const STORAGE_KEY = 'ezan-app:prayer-tracker';
+const SYNC_EVENT = 'ezan-tracker-updated';
+
 export const TRACKABLE_PRAYERS: { key: TrackablePrayerKey; label: string }[] = [
   { key: 'imsak', label: 'Sabah' },
   { key: 'ogle', label: 'Öğle' },
@@ -19,8 +21,23 @@ export function todayISO(offsetDays = 0): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function persist(next: TrackerData) {
+  saveJSON(STORAGE_KEY, next);
+  window.dispatchEvent(new Event(SYNC_EVENT));
+}
+
 export function usePrayerTracker() {
   const [data, setData] = useState<TrackerData>(() => loadJSON(STORAGE_KEY, {}));
+
+  useEffect(() => {
+    const sync = () => setData(loadJSON(STORAGE_KEY, {}));
+    window.addEventListener(SYNC_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(SYNC_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const isChecked = useCallback(
     (dateISO: string, key: TrackablePrayerKey) => Boolean(data[dateISO]?.[key]),
@@ -32,7 +49,16 @@ export function usePrayerTracker() {
       const day = { ...(prev[dateISO] ?? {}) };
       day[key] = !day[key];
       const next = { ...prev, [dateISO]: day };
-      saveJSON(STORAGE_KEY, next);
+      persist(next);
+      return next;
+    });
+  }, []);
+
+  const setChecked = useCallback((dateISO: string, key: TrackablePrayerKey, value: boolean) => {
+    setData((prev) => {
+      const day = { ...(prev[dateISO] ?? {}), [key]: value };
+      const next = { ...prev, [dateISO]: day };
+      persist(next);
       return next;
     });
   }, []);
@@ -58,5 +84,5 @@ export function usePrayerTracker() {
     return { completed, total: TRACKABLE_PRAYERS.length };
   }, [data]);
 
-  return { isChecked, toggle, weeklyStats, todayStats };
+  return { isChecked, toggle, setChecked, weeklyStats, todayStats };
 }

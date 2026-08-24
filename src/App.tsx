@@ -23,9 +23,9 @@ import { EsmaulHusnaList } from './components/EsmaulHusnaList';
 import { PrayerGuideScreen } from './components/PrayerGuideScreen';
 import { OccasionBanner } from './components/OccasionBanner';
 import { DailyWisdomCard } from './components/DailyWisdomCard';
-import { ReligiousAiChat } from './components/ReligiousAiChat';
-import { ReligiousAiPromo } from './components/ReligiousAiPromo';
 import { QuranScreen } from './components/QuranScreen';
+import { OnboardingPermissions } from './components/OnboardingPermissions';
+import { PrayerCheckPrompt } from './components/PrayerCheckPrompt';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useNow } from './hooks/useNow';
 import { usePrayerData } from './hooks/usePrayerData';
@@ -36,9 +36,12 @@ import { useThemeEffect } from './hooks/useThemeEffect';
 import { useIslamicOccasion } from './hooks/useIslamicOccasion';
 import { useRamadanCountdown } from './hooks/useRamadanCountdown';
 import { useFavoriteCities } from './hooks/useFavoriteCities';
+import { todayISO, usePrayerTracker } from './hooks/usePrayerTracker';
+import { useKazaCounter } from './hooks/useKazaCounter';
 import { reverseGeocodeLabel } from './api/geocode';
 import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
 import { primeAudio, unlockAdhanAudio } from './utils/sound';
+import { loadJSON, saveJSON } from './utils/storage';
 import {
   loadSelectedCity,
   loadSelectedCountry,
@@ -47,13 +50,21 @@ import {
   saveSelectedCountry,
   saveSettings,
 } from './utils/storage';
-import type { AppSettings, LocationInfo, PrimaryTabId, SecondaryScreenId, TabId } from './types';
+import type {
+  AppSettings,
+  LocationInfo,
+  PrimaryTabId,
+  PrayerTime,
+  SecondaryScreenId,
+  TabId,
+  TrackablePrayerKey,
+} from './types';
 
 const DEFAULT_CITY = 'İstanbul';
 const DEFAULT_COUNTRY = 'Turkey';
+const ONBOARDING_KEY = 'ezan-app:onboarding-v1';
 
 const SECONDARY_TITLES: Record<SecondaryScreenId, string> = {
-  assistant: 'Dini Asistan',
   quran: "Kur'an-ı Kerim",
   zikir: 'Zikir & Dualar',
   esma: "Esmaü'l-Hüsna",
@@ -76,6 +87,13 @@ function App() {
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
   >(() => (isNotificationSupported() ? Notification.permission : 'unsupported'));
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !loadJSON(ONBOARDING_KEY, false),
+  );
+  const [pendingCheck, setPendingCheck] = useState<{
+    key: TrackablePrayerKey;
+    label: string;
+  } | null>(null);
 
   useThemeEffect(settings.theme);
 
@@ -88,8 +106,14 @@ function App() {
   const { current, next, msRemaining } = useNextPrayer(today, tomorrow, now);
   const ramadanCountdown = useRamadanCountdown(today, tomorrow, now);
   const favorites = useFavoriteCities();
+  const tracker = usePrayerTracker();
+  const kaza = useKazaCounter();
 
-  useAdhanAlerts(current, next, msRemaining, settings);
+  const handlePrayerEntered = useCallback((prayer: PrayerTime & { key: TrackablePrayerKey }) => {
+    setPendingCheck({ key: prayer.key, label: prayer.label });
+  }, []);
+
+  useAdhanAlerts(current, next, msRemaining, settings, handlePrayerEntered);
   useScheduledNotifications(today, tomorrow, settings, location.label);
   const occasion = useIslamicOccasion(today?.hijri, settings.notificationsEnabled);
 
@@ -99,8 +123,6 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
-  // Mobil tarayıcılarda (özellikle iOS) otomatik ses için AudioContext kilidini
-  // kullanıcının uygulamadaki ilk dokunuşunda açıyoruz.
   useEffect(() => {
     const unlock = () => {
       primeAudio();
@@ -146,7 +168,20 @@ function App() {
   const handleRequestNotificationPermission = useCallback(async () => {
     const permission = await requestNotificationPermission();
     setNotificationPermission(permission);
+    return permission;
   }, []);
+
+  const handleOnboardingComplete = useCallback(
+    (opts: { notificationsGranted: boolean }) => {
+      saveJSON(ONBOARDING_KEY, true);
+      setShowOnboarding(false);
+      if (opts.notificationsGranted) {
+        setSettings((s) => ({ ...s, notificationsEnabled: true, soundEnabled: true }));
+        setNotificationPermission('granted');
+      }
+    },
+    [],
+  );
 
   const handlePrimaryNav = useCallback((tab: PrimaryTabId) => {
     setActiveTab(tab);
@@ -234,8 +269,6 @@ function App() {
             )}
 
             <DailyWisdomCard />
-
-            <ReligiousAiPromo onOpen={() => setActiveTab('assistant')} />
           </>
         )}
 
@@ -255,7 +288,6 @@ function App() {
           <MoreMenu onNavigate={handleSecondaryNav} isRamadan={Boolean(isRamadan)} />
         )}
 
-        {activeTab === 'assistant' && <ReligiousAiChat />}
         {activeTab === 'quran' && <QuranScreen />}
         {activeTab === 'zikir' && <ZikirTab />}
         {activeTab === 'esma' && <EsmaulHusnaList />}
@@ -276,7 +308,9 @@ function App() {
             settings={settings}
             onChange={setSettings}
             notificationPermission={notificationPermission}
-            onRequestNotificationPermission={handleRequestNotificationPermission}
+            onRequestNotificationPermission={() => {
+              void handleRequestNotificationPermission();
+            }}
           />
         )}
 
@@ -284,6 +318,37 @@ function App() {
       </div>
 
       <BottomNav active={activeTab} onChange={handlePrimaryNav} />
+
+      {showOnboarding && (
+        <OnboardingPermissions
+          onRequestNotifications={async () => {
+            const p = await handleRequestNotificationPermission();
+            return p === 'granted';
+          }}
+          onRequestLocation={() => {
+            primeAudio();
+            requestLocation();
+          }}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+
+      {pendingCheck && (
+        <PrayerCheckPrompt
+          prayerKey={pendingCheck.key}
+          prayerLabel={pendingCheck.label}
+          onPrayed={() => {
+            tracker.setChecked(todayISO(), pendingCheck.key, true);
+            setPendingCheck(null);
+          }}
+          onMissed={() => {
+            tracker.setChecked(todayISO(), pendingCheck.key, false);
+            kaza.increment(pendingCheck.key);
+            setPendingCheck(null);
+          }}
+          onDismiss={() => setPendingCheck(null)}
+        />
+      )}
     </div>
   );
 }

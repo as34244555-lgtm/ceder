@@ -50,7 +50,7 @@ Android Studio içinde:
    `android/app/release/app-release.aab`
 
 ### Play Console
-1. Yeni uygulama oluştur (Türkçe ad: **Ezan Vakti**)
+1. Yeni uygulama oluştur (Türkçe ad: **Ezan Vakti Ultra**)
 2. Package name: `com.ezanvakti.app` (capacitor.config.ts ile aynı olmalı)
 3. Production / Internal testing track'e `.aab` yükle
 4. Mağaza listesi, gizlilik politikası, içerik derecelendirmesi doldur

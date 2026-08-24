@@ -14,8 +14,8 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'icons/*.png', 'audio/*.mp3', 'audio/LICENSE.md'],
       manifest: {
         id: './',
-        name: 'Ezan Vakti — Namaz Vakitleri',
-        short_name: 'Ezan Vakti',
+        name: 'Ezan Vakti Ultra — Namaz Vakitleri',
+        short_name: 'Ezan Ultra',
         description:
           'Şehrinize veya konumunuza göre namaz vakitlerini gösteren, kıble pusulası, aylık takvim, tesbih ve dua içeren namaz vakti uygulaması.',
         lang: 'tr',

@@ -1,5 +1,4 @@
 import {
-  MessageCircleQuestion,
   Sparkles,
   BookOpenText,
   BookMarked,
@@ -26,17 +25,10 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
     badge?: string;
   }[] = [
     {
-      id: 'assistant',
-      label: 'Dini Asistan',
-      description: 'Soruyu güvenilir sitelerde araştırır',
-      icon: MessageCircleQuestion,
-    },
-    {
       id: 'quran',
       label: "Kur'an-ı Kerim",
       description: 'Arapça, Diyanet meal ve tilavet',
       icon: BookMarked,
-      badge: 'Yeni',
     },
     {
       id: 'zikir',
