@@ -111,6 +111,6 @@ Sorularınız için: **aakdniz935@gmail.com**
 *Bu metin genel bilgilendirme amaçlıdır; avukat onayı yerine geçmez.*
 
 **Kalıcı HTTPS sayfa (Play Console’a bunu girin):**
-https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/index.html
+https://as34244555-lgtm.github.io/ceder/privacy/
 
-Telif: https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/telif.html
+Telif: https://as34244555-lgtm.github.io/ceder/privacy/telif.html

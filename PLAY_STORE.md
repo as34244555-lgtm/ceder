@@ -55,9 +55,9 @@ Android Studio içinde:
 3. Production / Internal testing track'e `.aab` yükle
 4. Mağaza listesi, gizlilik politikası, içerik derecelendirmesi doldur
    - **Gizlilik politikası URL (HTTPS, ayrı site):**  
-     https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/index.html
+     https://as34244555-lgtm.github.io/ceder/privacy/
    - Telif/lisans:  
-     https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/telif.html
+     https://as34244555-lgtm.github.io/ceder/privacy/telif.html
 
 ## Geliştirme döngüsü
 

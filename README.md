@@ -81,10 +81,10 @@ React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capaci
 
 Play Console ve uygulama içi bağlantı:
 
-- https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/index.html
-- Telif: https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/telif.html
+- https://as34244555-lgtm.github.io/ceder/privacy/
+- Telif: https://as34244555-lgtm.github.io/ceder/privacy/telif.html
 
-Kaynak: `public/privacy/` (her canlı yayında `gh-pages` dalına kopyalanır).
+Kaynak: `public/privacy/`. GitHub Actions `github-pages` işi bu adresi yayına alır.
 
 ## Canlı site
 
