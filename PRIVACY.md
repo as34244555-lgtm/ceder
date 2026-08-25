@@ -111,6 +111,9 @@ Sorularınız için: **aakdniz935@gmail.com**
 *Bu metin genel bilgilendirme amaçlıdır; avukat onayı yerine geçmez.*
 
 **Kalıcı HTTPS sayfa (Play Console’a bunu girin):**
-https://as34244555-lgtm.github.io/ceder/privacy/
+https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/privacy/index.html
 
-Telif: https://as34244555-lgtm.github.io/ceder/privacy/telif.html
+Telif aynı sayfada (`#telif`).
+
+Kendi github.io adresiniz için (bir kez): Repo → Settings → Pages → Deploy from a branch → `gh-pages` / `/` → Save
+Sonra: https://as34244555-lgtm.github.io/ceder/privacy/

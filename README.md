@@ -79,12 +79,14 @@ React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capaci
 
 ## Gizlilik politikası (ayrı, kalıcı HTTPS site)
 
-Play Console ve uygulama içi bağlantı:
+Play Console ve uygulama içi bağlantı (HTML olarak açılır):
 
-- https://as34244555-lgtm.github.io/ceder/privacy/
-- Telif: https://as34244555-lgtm.github.io/ceder/privacy/telif.html
+- https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/privacy/index.html
 
-Kaynak: `public/privacy/`. GitHub Actions `github-pages` işi bu adresi yayına alır.
+Kaynak: `public/privacy/index.html` (`gh-pages` dalına kopyalanır).
+
+Kendi siteniz **https://as34244555-lgtm.github.io/ceder/privacy/** için bir kez:
+Repo → Settings → Pages → Deploy from a branch → `gh-pages` → `/` → Save
 
 ## Canlı site
 

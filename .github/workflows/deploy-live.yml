@@ -83,27 +83,4 @@ jobs:
           fi
           git commit -m "Live deploy ${GITHUB_SHA}"
           git push origin HEAD:gh-pages
-
-  # Kalıcı HTTPS site: https://as34244555-lgtm.github.io/ceder/privacy/
-  github-pages:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: _site
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          # github.io için (bir kez): Settings → Pages → Deploy from a branch → gh-pages / /
