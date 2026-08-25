@@ -100,7 +100,7 @@ Her push’ta `.github/workflows/deploy-live.yml` şunu yapar:
 
 ### Surge’ü bir kez bağlama
 
-1. https://surge.sh hesabı (`aakdniz935@gmail.com`) → token alın (`npx surge token`)
+1. https://surge.sh hesabı (`a.s.34244555@gmail.com`) → token alın (`npx surge token`)
 2. Repo → Settings → Secrets and variables → Actions:
    - `SURGE_LOGIN` = e-posta
    - `SURGE_TOKEN` = token

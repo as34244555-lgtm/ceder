@@ -2,8 +2,8 @@
 
 **Yürürlük tarihi:** 25 Ağustos 2026  
 **Uygulama:** Ezan Vakti Ultra (`com.ezan.app`)  
-**Geliştirici:** Ammar Akdeniz  
-**İletişim:** aakdniz935@gmail.com
+**Geliştirici:** Abdullah Sarıyıldız  
+**İletişim:** a.s.34244555@gmail.com
 
 Bu politika, Ezan Vakti Ultra uygulamasının hangi verileri işlediğini, reklamların nasıl çalıştığını ve haklarınızı açıklar. Uygulamayı indirerek veya kullanarak bu politikayı kabul etmiş sayılırsınız.
 
@@ -104,7 +104,7 @@ Bu metin güncellenebilir. Önemli değişiklikler uygulama veya mağaza sayfas�
 
 ## 9. İletişim
 
-Sorularınız için: **aakdniz935@gmail.com**
+Sorularınız için: **a.s.34244555@gmail.com**
 
 ---
 

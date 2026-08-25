@@ -1,4 +1,4 @@
-import { COPYRIGHT_PAGE_URL, PRIVACY_POLICY_URL } from '../constants/legal';
+import { COPYRIGHT_PAGE_URL, DEVELOPER_EMAIL, DEVELOPER_NAME, PRIVACY_POLICY_URL } from '../constants/legal';
 
 export function PrivacyScreen() {
   return (
@@ -31,7 +31,10 @@ export function PrivacyScreen() {
           <a className="text-gold-300 underline" href={COPYRIGHT_PAGE_URL} target="_blank" rel="noreferrer">
             Telif ve lisanslar
           </a>
-          . İletişim: aakdniz935@gmail.com
+          . Geliştirici: {DEVELOPER_NAME} ·{' '}
+          <a className="text-gold-300 underline" href={`mailto:${DEVELOPER_EMAIL}`}>
+            {DEVELOPER_EMAIL}
+          </a>
         </p>
       </div>
     </div>
