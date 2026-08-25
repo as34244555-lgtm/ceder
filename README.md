@@ -81,7 +81,7 @@ React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capaci
 
 Play Console ve uygulama içi bağlantı (HTML olarak açılır):
 
-- https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/privacy/index.html
+- https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/gizlilik.html
 
 Kaynak: `public/privacy/index.html` (`gh-pages` dalına kopyalanır).
 

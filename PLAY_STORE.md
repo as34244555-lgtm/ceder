@@ -56,7 +56,7 @@ Android Studio içinde:
 4. Production / Internal testing track'e `.aab` yükle
 5. Mağaza listesi, gizlilik politikası, içerik derecelendirmesi doldur
    - **Gizlilik politikası URL (HTTPS, ayrı site):**  
-     https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/privacy/index.html
+     https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/gizlilik.html
    - Telif aynı sayfada (`#telif`)
    - Kendi alan adınız için: Settings → Pages → branch `gh-pages` → Save  
      https://as34244555-lgtm.github.io/ceder/privacy/

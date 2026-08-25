@@ -111,7 +111,7 @@ Sorularınız için: **a.s.34244555@gmail.com**
 *Bu metin genel bilgilendirme amaçlıdır; avukat onayı yerine geçmez.*
 
 **Kalıcı HTTPS sayfa (Play Console’a bunu girin):**
-https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/privacy/index.html
+https://htmlpreview.github.io/?https://github.com/as34244555-lgtm/ceder/blob/gh-pages/gizlilik.html
 
 Telif aynı sayfada (`#telif`).
 
