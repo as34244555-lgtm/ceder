@@ -1,4 +1,4 @@
-import { PRIVACY_POLICY_URL } from '../constants/legal';
+import { PRIVACY_POLICY_URL, DEVELOPER_EMAIL, DEVELOPER_NAME } from '../constants/legal';
 
 export function Footer() {
   return (
@@ -29,8 +29,13 @@ export function Footer() {
           Gizlilik
         </a>
         {' · '}
-        Ezan Vakti Ultra · Vaktin hayırlı olsun 🤲
+        {DEVELOPER_NAME}
+        {' · '}
+        <a href={`mailto:${DEVELOPER_EMAIL}`} className="underline hover:text-[var(--text-secondary)]">
+          {DEVELOPER_EMAIL}
+        </a>
       </p>
+      <p className="mt-1">Ezan Vakti Ultra · Vaktin hayırlı olsun 🤲</p>
     </footer>
   );
 }

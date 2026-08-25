@@ -28,6 +28,7 @@ import { InstallPrompt } from './InstallPrompt';
 import { LocationBar } from './LocationBar';
 import { FavoriteCitiesBar } from './FavoriteCitiesBar';
 import type { FavoriteCity } from '../types';
+import { DEVELOPER_EMAIL, DEVELOPER_NAME } from '../constants/legal';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -587,6 +588,13 @@ export function SettingsScreen({
           PWA olarak ana ekrana eklenebilir. Android .aab ve widget için PLAY_STORE.md dosyasına
           bakın.
         </p>
+      </Section>
+
+      <Section title="Geliştirici">
+        <p className="text-sm font-semibold text-[var(--text-primary)]">{DEVELOPER_NAME}</p>
+        <a className="text-sm text-gold-300 underline break-all" href={`mailto:${DEVELOPER_EMAIL}`}>
+          {DEVELOPER_EMAIL}
+        </a>
       </Section>
     </div>
   );

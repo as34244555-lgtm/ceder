@@ -1,5 +1,6 @@
 import { MapPin, Bell, Compass, Sparkles, Battery, AlarmClock } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { DEVELOPER_NAME } from '../constants/legal';
 
 interface OnboardingPermissionsProps {
   onComplete: (opts: {
@@ -43,7 +44,7 @@ export function OnboardingPermissions({
           </span>
           <div>
             <p className="text-lg font-semibold text-[var(--text-primary)]">Ezan Vakti Ultra</p>
-            <p className="text-xs text-[var(--text-muted)]">Tüm izinler — bir kez, kalıcı</p>
+            <p className="text-xs text-[var(--text-muted)]">Geliştirici: {DEVELOPER_NAME}</p>
           </div>
         </div>
 

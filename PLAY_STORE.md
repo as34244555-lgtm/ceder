@@ -52,7 +52,7 @@ Android Studio içinde:
 ### Play Console
 1. Yeni uygulama oluştur (Türkçe ad: **Ezan Vakti Ultra**)
 2. Package name: `com.ezan.app` (capacitor.config.ts ile aynı olmalı)
-3. Geliştirici: **Abdullah Sarıyıldız** · a.s.34244555@gmail.com
+3. Geliştirici: **ABDULLAH SARIYILDIZ** · a.s.34244555@gmail.com
 4. Production / Internal testing track'e `.aab` yükle
 5. Mağaza listesi, gizlilik politikası, içerik derecelendirmesi doldur
    - **Gizlilik politikası URL (HTTPS, ayrı site):**  

@@ -4,5 +4,5 @@ export const PRIVACY_POLICY_URL =
 
 export const COPYRIGHT_PAGE_URL = `${PRIVACY_POLICY_URL}#telif`;
 
-export const DEVELOPER_NAME = 'Abdullah Sarıyıldız';
+export const DEVELOPER_NAME = 'ABDULLAH SARIYILDIZ';
 export const DEVELOPER_EMAIL = 'a.s.34244555@gmail.com';
