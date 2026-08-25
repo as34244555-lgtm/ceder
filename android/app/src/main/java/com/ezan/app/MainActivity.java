@@ -1,4 +1,4 @@
-package com.ezanvakti.app;
+package com.ezan.app;
 
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;

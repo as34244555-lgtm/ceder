@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.ezanvakti.app',
+  appId: 'com.ezan.app',
   appName: 'Ezan Vakti Ultra',
   webDir: 'dist',
   server: {

@@ -7,10 +7,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.ezanvakti.app"
+    namespace = "com.ezan.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.ezanvakti.app"
+        applicationId "com.ezan.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

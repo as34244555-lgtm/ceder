@@ -1,4 +1,4 @@
-package com.ezanvakti.app;
+package com.ezan.app;
 
 import android.content.Context;
 import android.content.Intent;

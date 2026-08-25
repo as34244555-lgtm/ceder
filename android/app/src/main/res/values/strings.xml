@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Ezan Vakti Ultra</string>
     <string name="title_activity_main">Ezan Vakti Ultra</string>
-    <string name="package_name">com.ezanvakti.app</string>
-    <string name="custom_url_scheme">com.ezanvakti.app</string>
+    <string name="package_name">com.ezan.app</string>
+    <string name="custom_url_scheme">com.ezan.app</string>
     <string name="widget_description">Sonraki namaz vakitlerini ana ekranda gösterir</string>
 </resources>

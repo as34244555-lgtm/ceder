@@ -1,4 +1,4 @@
-package com.ezanvakti.app;
+package com.ezan.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
