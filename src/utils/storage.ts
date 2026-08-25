@@ -29,15 +29,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   kidsMode: false,
 };
 
-const VALID_SOUND_IDS = new Set([
-  'makkah',
-  'madinah',
-  'sabah',
-  'aaqib',
-  'aqsa',
-  'klcc',
-  'mishary',
-]);
+const VALID_SOUND_IDS = new Set(['makkah', 'madinah', 'sabah', 'klcc']);
 
 export function loadSettings(): AppSettings {
   try {

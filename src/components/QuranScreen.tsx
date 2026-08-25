@@ -1,19 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  BookOpen,
-  Bookmark,
-  Check,
-  Eye,
-  EyeOff,
-  Loader2,
-  Pause,
-  Play,
-  Search,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BookOpen, Bookmark, Check, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { QURAN_SURAHS } from '../data/quranSurahs';
 import {
-  ayahAudioUrl,
-  fetchSurahWithTranslation,
+  fetchSurahArabic,
   loadBookmark,
   loadHatim,
   loadMemorize,
@@ -21,35 +10,19 @@ import {
   toggleHatimSurah,
   toggleMemorize,
   type QuranAyah,
-  type QuranEditionPair,
 } from '../api/quran';
-
-const MEAL_OPTIONS: { id: QuranEditionPair; label: string }[] = [
-  { id: 'tr.diyanet', label: 'Diyanet' },
-  { id: 'tr.yazir', label: 'Yazır' },
-  { id: 'en.sahih', label: 'Sahih (EN)' },
-];
-
-const MEAL_LABELS: Record<QuranEditionPair, string> = {
-  'tr.diyanet': 'Diyanet meal',
-  'tr.yazir': 'Elmalılı Yazır meal',
-  'en.sahih': 'Sahih International',
-};
 
 export function QuranScreen() {
   const [query, setQuery] = useState('');
   const [surahNumber, setSurahNumber] = useState<number | null>(null);
   const [ayahs, setAyahs] = useState<QuranAyah[]>([]);
-  const [meal, setMeal] = useState<QuranEditionPair>('tr.diyanet');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [playing, setPlaying] = useState<number | null>(null);
   const [bookmark, setBookmark] = useState(() => loadBookmark());
   const [hatim, setHatim] = useState(() => loadHatim());
   const [memorizeMap, setMemorizeMap] = useState(() => loadMemorize());
   const [memorizeMode, setMemorizeMode] = useState(false);
   const [revealedAyahs, setRevealedAyahs] = useState<Set<number>>(new Set());
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const filtered = QURAN_SURAHS.filter(
     (s) =>
@@ -64,7 +37,7 @@ export function QuranScreen() {
     setLoading(true);
     setError(null);
     setRevealedAyahs(new Set());
-    void fetchSurahWithTranslation(surahNumber, meal)
+    void fetchSurahArabic(surahNumber)
       .then((data) => {
         if (!cancelled) setAyahs(data);
       })
@@ -77,26 +50,7 @@ export function QuranScreen() {
     return () => {
       cancelled = true;
     };
-  }, [surahNumber, meal]);
-
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-    };
-  }, []);
-
-  const togglePlay = (ayah: QuranAyah) => {
-    if (playing === ayah.globalNumber) {
-      audioRef.current?.pause();
-      setPlaying(null);
-      return;
-    }
-    if (!audioRef.current) audioRef.current = new Audio();
-    const audio = audioRef.current;
-    audio.src = ayahAudioUrl(ayah.globalNumber);
-    audio.onended = () => setPlaying(null);
-    void audio.play().then(() => setPlaying(ayah.globalNumber)).catch(() => setPlaying(null));
-  };
+  }, [surahNumber]);
 
   const handleBookmark = (ayah: number) => {
     if (surahNumber == null) return;
@@ -119,43 +73,29 @@ export function QuranScreen() {
     setRevealedAyahs((prev) => new Set(prev).add(ayah));
   };
 
-  const isAyahMemorized = (ayah: number) => {
-    if (surahNumber == null) return false;
-    return memorizeMap[`${surahNumber}:${ayah}`] === true;
-  };
-
-  const openBookmark = () => {
-    if (!bookmark) return;
-    setSurahNumber(bookmark.surah);
-  };
+  const isAyahMemorized = (ayah: number) =>
+    surahNumber != null && Boolean(memorizeMap[`${surahNumber}:${ayah}`]);
 
   if (surahNumber != null) {
-    const meta = QURAN_SURAHS.find((s) => s.number === surahNumber);
-
+    const surah = QURAN_SURAHS.find((s) => s.number === surahNumber);
     return (
       <div className="w-full flex flex-col gap-3 fade-in-up">
-        <button
-          type="button"
-          onClick={() => {
-            audioRef.current?.pause();
-            setPlaying(null);
-            setSurahNumber(null);
-            setAyahs([]);
-          }}
-          className="self-start text-xs text-gold-300 hover:underline"
-        >
-          ← Sure listesi
-        </button>
-
         <div className="glass-card rounded-2xl px-4 py-3 flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">
-                {meta?.number}. {meta?.name}
+              <button
+                type="button"
+                onClick={() => setSurahNumber(null)}
+                className="self-start text-xs text-gold-300 hover:underline"
+              >
+                ← Sure listesi
+              </button>
+              <p className="text-sm font-medium text-[var(--text-primary)] mt-1">
+                {surah?.number}. {surah?.name}
               </p>
-              <p className="text-xs text-[var(--text-muted)]">
-                {meta?.revelationType} · {meta?.numberOfAyahs} ayet · {MEAL_LABELS[meal]} · Alafasy
-                tilavet
+              <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                Arapça metin (uthmani). Telif nedeniyle meal ve tilavet yoktur; resmi meal için
+                Diyanet veya lisanslı kaynak kullanın.
               </p>
             </div>
             <button
@@ -170,23 +110,6 @@ export function QuranScreen() {
             >
               <Check className="h-4 w-4" />
             </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {MEAL_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setMeal(opt.id)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-                  meal === opt.id
-                    ? 'bg-gold-400/90 text-night-950'
-                    : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
           </div>
 
           <button
@@ -215,8 +138,8 @@ export function QuranScreen() {
             const memorized = isAyahMemorized(ayah.numberInSurah);
             const isCurrentBookmark =
               bookmark?.surah === surahNumber && bookmark.ayah === ayah.numberInSurah;
-            const showTranslation =
-              !memorizeMode || revealedAyahs.has(ayah.numberInSurah) || memorized;
+            const hideArabic =
+              memorizeMode && !revealedAyahs.has(ayah.numberInSurah) && !memorized;
 
             return (
               <div
@@ -261,39 +184,24 @@ export function QuranScreen() {
                     >
                       <Check className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => togglePlay(ayah)}
-                      className="rounded-lg p-1.5 text-gold-300 hover:bg-gold-400/10"
-                      aria-label="Tilavet"
-                    >
-                      {playing === ayah.globalNumber ? (
-                        <Pause className="h-4 w-4" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </button>
                   </div>
                 </div>
-                <p
-                  className="text-xl leading-loose text-[var(--text-primary)] text-right"
-                  dir="rtl"
-                  lang="ar"
-                >
-                  {ayah.arabic}
-                </p>
-                {showTranslation ? (
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {ayah.translation}
-                  </p>
-                ) : (
+                {hideArabic ? (
                   <button
                     type="button"
                     onClick={() => revealAyah(ayah.numberInSurah)}
                     className="self-start rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)] transition"
                   >
-                    Meali göster
+                    Metni göster
                   </button>
+                ) : (
+                  <p
+                    className="text-xl leading-loose text-[var(--text-primary)] text-right"
+                    dir="rtl"
+                    lang="ar"
+                  >
+                    {ayah.arabic}
+                  </p>
                 )}
               </div>
             );
@@ -318,102 +226,41 @@ export function QuranScreen() {
               Hatim {hatimCount}/114
             </span>
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Arapça metin, meal seçimi ve tilavet. Açılan sureler cihazda önbelleğe alınır.
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            Arapça mushaf metni. Meal ve sesli tilavet lisans nedeniyle eklenmemiştir.
           </p>
         </div>
       </div>
-
-      {bookmark && (
-        <button
-          type="button"
-          onClick={openBookmark}
-          className="glass-card rounded-2xl px-4 py-3 flex items-center gap-3 text-left hover:bg-[var(--surface-soft-strong)] transition"
-        >
-          <Bookmark className="h-4 w-4 shrink-0 text-gold-300 fill-gold-300" />
-          <div className="min-w-0">
-            <span className="inline-block rounded-full bg-gold-400/15 px-2 py-0.5 text-[10px] font-semibold text-gold-300 mb-1">
-              Kaldığın yer
-            </span>
-            <p className="text-sm text-[var(--text-primary)]">
-              {QURAN_SURAHS.find((s) => s.number === bookmark.surah)?.name ?? `Sure ${bookmark.surah}`}
-              {' · '}Ayet {bookmark.ayah}
-            </p>
-          </div>
-        </button>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {MEAL_OPTIONS.map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => setMeal(opt.id)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-              meal === opt.id
-                ? 'bg-gold-400/90 text-night-950'
-                : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      <label className="glass-card rounded-2xl px-3 py-2 flex items-center gap-2">
-        <Search className="h-4 w-4 text-[var(--text-muted)]" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Sure ara (ör. Yâsîn)"
-          className="flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-faint)]"
-        />
-      </label>
-
-      <div className="flex flex-col gap-1.5 max-h-[min(62vh,640px)] overflow-y-auto">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Sure ara…"
+        className="w-full rounded-2xl bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none"
+      />
+      <div className="flex flex-col gap-2">
         {filtered.map((s) => {
-          const completed = hatim.includes(s.number);
-          const isBookmarkSurah = bookmark?.surah === s.number;
-
+          const done = hatim.includes(s.number);
+          const isBm = bookmark?.surah === s.number;
           return (
             <button
               key={s.number}
               type="button"
               onClick={() => setSurahNumber(s.number)}
-              className="glass-card rounded-xl px-4 py-3 flex items-center gap-3 text-left hover:bg-[var(--surface-soft-strong)] transition"
+              className="glass-card rounded-2xl px-4 py-3 flex items-center gap-3 text-left"
             >
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${
-                  completed ? 'bg-emerald-400/20 text-emerald-300' : 'text-gold-300'
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                  done ? 'bg-emerald-400/20 text-emerald-300' : 'text-gold-300'
                 }`}
               >
-                {completed ? <Check className="h-4 w-4" /> : s.number}
+                {s.number}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm text-[var(--text-primary)]">{s.name}</p>
-                  {isBookmarkSurah && (
-                    <span className="rounded-full bg-gold-400/15 px-2 py-0.5 text-[10px] font-medium text-gold-300">
-                      Kaldığın yer
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  {s.revelationType} · {s.numberOfAyahs} ayet
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => handleHatimToggle(s.number, e)}
-                className={`shrink-0 rounded-lg p-2 transition ${
-                  completed
-                    ? 'text-emerald-300 bg-emerald-400/10'
-                    : 'text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--surface-soft)]'
-                }`}
-                aria-label={completed ? 'Hatimden çıkar' : 'Hatim olarak işaretle'}
-              >
-                <Check className="h-4 w-4" />
-              </button>
+              <span className="flex-1 text-sm text-[var(--text-primary)]">{s.name}</span>
+              {isBm && (
+                <span className="rounded-full bg-gold-400/15 px-2 py-0.5 text-[10px] font-medium text-gold-300">
+                  Yer imi
+                </span>
+              )}
             </button>
           );
         })}

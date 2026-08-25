@@ -1,3 +1,5 @@
+import { COPYRIGHT_PAGE_URL, PRIVACY_POLICY_URL } from '../constants/legal';
+
 export function PrivacyScreen() {
   return (
     <div className="w-full flex flex-col gap-3 fade-in-up text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -18,10 +20,18 @@ export function PrivacyScreen() {
         </p>
         <p>
           Üçüncü taraf servisler: Aladhan (vakitler), OpenStreetMap (cami/helal), AlQuran.cloud
-          (Kur’an), altın kur API’si. Bunların kendi politikaları geçerlidir.
+          (yalnızca Arapça mushaf). Meal ve tilavet yoktur. Bunların kendi politikaları geçerlidir.
         </p>
         <p className="text-xs text-[var(--text-muted)]">
-          Tam metin: uygulama deposundaki PRIVACY.md. İletişim: aakdniz935@gmail.com
+          Tam metin ayrı sitede (HTTPS, kalıcı):{' '}
+          <a className="text-gold-300 underline" href={PRIVACY_POLICY_URL} target="_blank" rel="noreferrer">
+            Gizlilik politikası
+          </a>
+          {' · '}
+          <a className="text-gold-300 underline" href={COPYRIGHT_PAGE_URL} target="_blank" rel="noreferrer">
+            Telif ve lisanslar
+          </a>
+          . İletişim: aakdniz935@gmail.com
         </p>
       </div>
     </div>

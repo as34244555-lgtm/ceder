@@ -333,8 +333,7 @@ export function SettingsScreen({
           {settings.adhanSoundMode === 'adhan' && (
             <div className="flex flex-col gap-2">
               <p className="text-xs text-[var(--text-muted)]">
-                Yüksek kaliteli kayıtlar (Mekke / Medine / Kudüs / KLCC / Mishary). Eski düşük
-                kaliteli ses kullanılmaz.
+                Yalnızca kamu malı / CC0 ezan kayıtları (Mekke, Medine, Sabah Fakhry, KLCC).
               </p>
               {ADHAN_SOUNDS.map((sound) => {
                 const active = settings.adhanSoundId === sound.id;

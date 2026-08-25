@@ -30,7 +30,7 @@ export function MoreMenu({ onNavigate, isRamadan }: MoreMenuProps) {
     {
       id: 'quran',
       label: "Kur'an-ı Kerim",
-      description: 'Meal, hatim, ezber, tilavet',
+      description: 'Arapça metin, hatim, ezber',
       icon: BookMarked,
     },
     {

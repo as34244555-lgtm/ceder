@@ -24,7 +24,7 @@ Esmaü'l-Hüsna içeren; **PWA** olarak kurulan ve **Capacitor** ile Play Store'
 - Ramazan modu: iftar/sahur geri sayımı, 30 günlük oruç takibi
 
 ### Daha menüsü
-- Kur'an-ı Kerim (meal + tilavet)
+- Kur'an-ı Kerim (Arapça uthmani metin; meal/tilavet yok)
 - Zikir & dualar, Esmaü'l-Hüsna, namaz nasıl kılınır rehberi
 - Zekât & fitre hesaplama
 - Yakındaki camiler (OpenStreetMap)
@@ -76,6 +76,15 @@ Detaylar ve **“web sınırları .aab ile kalkar mı?”** cevabı: [PLAY_STORE
 ## Teknolojiler
 
 React 19 · TypeScript · Vite 8 · Tailwind CSS v4 · vite-plugin-pwa · Capacitor 8 · Aladhan API · OpenStreetMap Overpass
+
+## Gizlilik politikası (ayrı, kalıcı HTTPS site)
+
+Play Console ve uygulama içi bağlantı:
+
+- https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/index.html
+- Telif: https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/telif.html
+
+Kaynak: `public/privacy/` (her canlı yayında `gh-pages` dalına kopyalanır).
 
 ## Canlı site
 

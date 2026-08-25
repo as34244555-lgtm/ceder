@@ -49,14 +49,7 @@ export interface FavoriteCity {
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type TimeFormat = '24' | '12';
 export type AdhanSoundMode = 'adhan' | 'chime';
-export type AdhanSoundId =
-  | 'makkah'
-  | 'madinah'
-  | 'sabah'
-  | 'aaqib'
-  | 'aqsa'
-  | 'klcc'
-  | 'mishary';
+export type AdhanSoundId = 'makkah' | 'madinah' | 'sabah' | 'klcc';
 export type AppLanguage = 'tr' | 'en' | 'ar';
 export type PrayerAlertMap = Record<TrackablePrayerKey, boolean>;
 

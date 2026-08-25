@@ -61,7 +61,7 @@ Vakit ve içerik için harici API’ler çağrılır. Bu çağrılarda IP adresi
 - **Aladhan API** — namaz vakitleri  
 - **BigDataCloud** — ters geokod (şehir adı)  
 - **OpenStreetMap / Overpass** — camiler ve helal mekânlar  
-- **AlQuran.cloud / islamic.network** — Kur’an metni ve tilavet  
+- **AlQuran.cloud** — yalnızca Arapça uthmani mushaf metni (meal/tilavet yok)  
 - **Altın fiyat API’si** — zekât nisabı tahmini  
 
 Bu servislerin kendi gizlilik politikaları geçerlidir. Geliştirici bu servislerin sunucularını işletmez.
@@ -108,4 +108,9 @@ Sorularınız için: **aakdniz935@gmail.com**
 
 ---
 
-*Bu metin genel bilgilendirme amaçlıdır; avukat onayı yerine geçmez. Play Console’a HTTPS adresli bir sayfa olarak yükleyin.*
+*Bu metin genel bilgilendirme amaçlıdır; avukat onayı yerine geçmez.*
+
+**Kalıcı HTTPS sayfa (Play Console’a bunu girin):**
+https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/index.html
+
+Telif: https://cdn.jsdelivr.net/gh/as34244555-lgtm/ceder@gh-pages/privacy/telif.html

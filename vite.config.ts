@@ -67,15 +67,6 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            urlPattern: /^https:\/\/cdn\.islamic\.network\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'quran-audio-cache',
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
         ],
       },
       devOptions: {

@@ -1,86 +1,85 @@
 export interface DailyWisdom {
   type: 'ayet' | 'hadis';
   source: string;
-  arabic?: string;
   text: string;
 }
 
-/** Gün döngüsüyle seçilen kısa ayet ve hadisler. */
+/** Kısa, özgün hatırlatmalar (resmî meal iddiası yok). */
 export const DAILY_WISDOM: DailyWisdom[] = [
   {
     type: 'ayet',
-    source: 'Bakara 2:286',
-    text: 'Allah, bir kimseyi ancak gücünün yettiği şeyle yükümlü kılar.',
+    source: 'Bakara 2:286 (anlam özeti)',
+    text: 'Kul, gücünün yetmediğiyle sorumlu tutulmaz.',
   },
   {
     type: 'ayet',
-    source: 'İnşirah 94:5-6',
-    text: 'Demek ki, güçlükle beraber bir kolaylık vardır. Evet, güçlükle beraber bir kolaylık vardır.',
+    source: 'İnşirah 94:5-6 (anlam özeti)',
+    text: 'Zorluğun yanında bir kolaylık vardır.',
   },
   {
     type: 'ayet',
-    source: 'Ra\'d 13:28',
-    text: 'İnananların kalpleri Allah\'ı anmakla huzur bulur.',
+    source: 'Ra\'d 13:28 (anlam özeti)',
+    text: 'Kalpler Allah’ı anmakla huzur bulur.',
   },
   {
     type: 'ayet',
-    source: 'Ahzab 33:41',
-    text: 'Ey iman edenler! Allah\'ı çok zikredin.',
+    source: 'Ahzab 33:41 (anlam özeti)',
+    text: 'Müminler Allah’ı çok anmaya çağrılır.',
   },
   {
     type: 'ayet',
-    source: 'Hucurat 49:13',
-    text: 'Allah katında en üstün olanınız, O\'na karşı gelmekten en çok sakınanızdır.',
+    source: 'Hucurat 49:13 (anlam özeti)',
+    text: 'Üstünlük takvadadır.',
   },
   {
     type: 'hadis',
-    source: 'Buhârî',
-    text: 'Ameller niyetlere göredir. Herkesin niyeti neyse eline geçen odur.',
+    source: 'Niyet hadisi (anlam özeti)',
+    text: 'Ameller niyetlere göredir.',
   },
   {
     type: 'hadis',
-    source: 'Müslim',
-    text: 'Müslüman, dilinden ve elinden diğer Müslümanların emin olduğu kimsedir.',
+    source: 'Emanet hadisi (anlam özeti)',
+    text: 'Müslüman, elinden ve dilinden emin olunan kimsedir.',
   },
   {
     type: 'hadis',
-    source: 'Tirmizî',
-    text: 'Kolaylaştırın, zorlaştırmayın; müjdeleyin, nefret ettirmeyin.',
+    source: 'Kolaylaştırma (anlam özeti)',
+    text: 'Kolaylaştırın, zorlaştırmayın; müjdeleyin.',
   },
   {
     type: 'hadis',
-    source: 'Buhârî',
-    text: 'Sizin en hayırlınız, ahlakı en güzel olanınızdır.',
+    source: 'Ahlak (anlam özeti)',
+    text: 'En hayırlınız, ahlakı en güzel olanınızdır.',
   },
   {
     type: 'hadis',
-    source: 'Müslim',
-    text: 'Güçlü kimse, güreşte rakibini yenen değil; öfkelendiği zaman nefsine hâkim olandır.',
+    source: 'Öfke (anlam özeti)',
+    text: 'Asıl güç, öfkesine hâkim olmaktır.',
   },
   {
     type: 'ayet',
-    source: 'Nahl 16:90',
-    text: 'Allah adaleti, iyiliği ve yakınlara vermeyi emreder.',
+    source: 'Nahl 16:90 (anlam özeti)',
+    text: 'Adalet, iyilik ve yakınlara vermek emredilir.',
   },
   {
     type: 'ayet',
-    source: 'Zümer 39:53',
-    text: 'Allah\'ın rahmetinden ümit kesmeyin. Allah bütün günahları bağışlar.',
+    source: 'Zümer 39:53 (anlam özeti)',
+    text: 'Allah’ın rahmetinden ümit kesilmez.',
   },
   {
     type: 'hadis',
-    source: 'Buhârî',
-    text: 'Kim bir müminin dünya sıkıntılarından birini giderirse, Allah da onun ahiret sıkıntılarından birini giderir.',
+    source: 'Sıkıntı giderme (anlam özeti)',
+    text: 'Bir müminin sıkıntısını gideren, karşılığını görür.',
   },
   {
     type: 'hadis',
-    source: 'Tirmizî',
-    text: 'Gülümseyerek kardeşinle karşılaşman sadakadır.',
+    source: 'Gülümseme (anlam özeti)',
+    text: 'Kardeşine gülümseyerek bakmak sadakadır.',
   },
   {
     type: 'ayet',
-    source: 'Asr 103:1-3',
-    text: 'Asra yemin olsun ki, insan ziyandadır. Ancak iman edip salih amel işleyenler, birbirlerine hakkı ve sabrı tavsiye edenler müstesna.',
+    source: 'Asr 103 (anlam özeti)',
+    text: 'İman, salih amel, hak ve sabır tavsiyesi kurtuluştur.',
   },
 ];
 
