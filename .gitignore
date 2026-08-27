@@ -34,6 +34,8 @@ android/app/*.iml
 android/app/release
 *.keystore
 *.jks
+*.p12
+android/keystore.properties
 
 # Surge / Netlify local auth
 .surge/
