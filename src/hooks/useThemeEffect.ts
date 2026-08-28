@@ -21,8 +21,12 @@ export function useThemeEffect(theme: ThemeMode) {
 
     if (theme === 'system') {
       const mq = window.matchMedia('(prefers-color-scheme: light)');
-      mq.addEventListener('change', apply);
-      return () => mq.removeEventListener('change', apply);
+      if (typeof mq.addEventListener === 'function') {
+        mq.addEventListener('change', apply);
+        return () => mq.removeEventListener('change', apply);
+      }
+      mq.addListener(apply);
+      return () => mq.removeListener(apply);
     }
   }, [theme]);
 }

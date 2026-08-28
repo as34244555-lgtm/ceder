@@ -42,7 +42,11 @@ import { useFavoriteCities } from './hooks/useFavoriteCities';
 import { todayISO, usePrayerTracker } from './hooks/usePrayerTracker';
 import { useKazaCounter } from './hooks/useKazaCounter';
 import { reverseGeocodeLabel } from './api/geocode';
-import { isNotificationSupported, requestNotificationPermission } from './utils/notifications';
+import {
+  getInitialNotificationPermission,
+  requestNotificationPermission,
+  syncNotificationPermission,
+} from './utils/notifications';
 import { primeAudio, unlockAdhanAudio } from './utils/sound';
 import { getIqamahCountdown } from './utils/iqamah';
 import { loadJSON, saveJSON } from './utils/storage';
@@ -92,7 +96,7 @@ function App() {
   const [settings, setSettings] = useState(() => loadSettings());
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | 'unsupported'
-  >(() => (isNotificationSupported() ? Notification.permission : 'unsupported'));
+  >(getInitialNotificationPermission);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !loadJSON(ONBOARDING_KEY, false),
   );
@@ -106,6 +110,10 @@ function App() {
     document.documentElement.lang = settings.language;
     document.documentElement.dir = settings.language === 'ar' ? 'rtl' : 'ltr';
   }, [settings.language]);
+
+  useEffect(() => {
+    void syncNotificationPermission().then(setNotificationPermission);
+  }, []);
 
   const { status: geoStatus, coords, error: geoError, requestLocation } = useGeolocation();
   const { today, tomorrow, loading, error, refetch, fromCache } = usePrayerData(

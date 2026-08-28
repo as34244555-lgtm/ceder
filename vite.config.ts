@@ -11,6 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/*.png', 'audio/*.mp3', 'audio/LICENSE.md'],
       manifest: {
         id: './',
@@ -73,7 +74,19 @@ export default defineConfig({
         enabled: false,
       },
     }),
+    {
+      name: 'strip-crossorigin-for-capacitor',
+      transformIndexHtml(html: string) {
+        return html
+          .replaceAll('<script type="module" crossorigin', '<script type="module"')
+          .replaceAll('<link rel="stylesheet" crossorigin', '<link rel="stylesheet"');
+      },
+    },
   ],
+  build: {
+    target: 'es2020',
+    modulePreload: false,
+  },
   server: {
     // Allows the dev server to be reached through tunneling tools
     // (e.g. Cloudflare Tunnel) which use a different Host header.

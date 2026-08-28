@@ -1,13 +1,42 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
+export type AppNotificationPermission = NotificationPermission | 'unsupported';
+
+function webNotificationPermission(): AppNotificationPermission {
+  // Android WebView has no Notification constructor. Accessing Notification.permission
+  // there throws and leaves a blank green screen on launch.
+  try {
+    if (typeof Notification === 'undefined') return 'unsupported';
+    return Notification.permission;
+  } catch {
+    return 'unsupported';
+  }
+}
+
 export function isNotificationSupported(): boolean {
   if (typeof window === 'undefined') return false;
   if (Capacitor.isNativePlatform()) return true;
-  return 'Notification' in window;
+  return webNotificationPermission() !== 'unsupported';
 }
 
-export type AppNotificationPermission = NotificationPermission | 'unsupported';
+/** Safe for first React render — never touches missing WebView Notification. */
+export function getInitialNotificationPermission(): AppNotificationPermission {
+  if (Capacitor.isNativePlatform()) return 'denied';
+  return webNotificationPermission();
+}
+
+export async function syncNotificationPermission(): Promise<AppNotificationPermission> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const current = await LocalNotifications.checkPermissions();
+      return current.display === 'granted' ? 'granted' : 'denied';
+    } catch {
+      return 'denied';
+    }
+  }
+  return webNotificationPermission();
+}
 
 export async function requestNotificationPermission(): Promise<AppNotificationPermission> {
   if (Capacitor.isNativePlatform()) {
@@ -20,7 +49,7 @@ export async function requestNotificationPermission(): Promise<AppNotificationPe
       return 'denied';
     }
   }
-  if (!('Notification' in window)) return 'unsupported';
+  if (webNotificationPermission() === 'unsupported') return 'unsupported';
   if (Notification.permission !== 'default') return Notification.permission;
   return Notification.requestPermission();
 }
