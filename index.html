@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b3d2e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ezan Vakti Ultra" />
+    <meta name="author" content="ABDULLAH SARIYILDIZ" />
+    <meta name="description"
+      content="Dünyanın her yerinden namaz vakitlerini gösteren, kıble pusulası, aylık takvim, tesbih ve dualar içeren, ezan vaktinde sesli ve bildirimli uyaran ücretsiz namaz vakti uygulaması."
+    />
+    <title>Ezan Vakti Ultra</title>
+    <style>
+      html, body, #root { min-height: 100%; margin: 0; background: #04120e; color: #e8f0ea; }
+      #boot-fallback {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+        padding: 2rem;
+      }
+      #boot-fallback strong { color: #f2c14e; font-size: 1.15rem; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Amiri:wght@400;700&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root">
+      <div id="boot-fallback">
+        <strong>Ezan Vakti Ultra</strong>
+        <span>Yükleniyor…</span>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
