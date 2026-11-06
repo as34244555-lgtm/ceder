@@ -54,24 +54,38 @@ export async function requestNotificationPermission(): Promise<AppNotificationPe
   return Notification.requestPermission();
 }
 
+const SOUND_CHANNEL_ID = 'ezan-vakti-ses';
+const SILENT_CHANNEL_ID = 'ezan-vakti-sessiz';
+/** android/app/src/main/res/raw/ezan_alert.wav */
+const ALERT_SOUND = 'ezan_alert.wav';
+
 export async function ensureNotificationChannel() {
   if (!Capacitor.isNativePlatform()) return;
   try {
     await LocalNotifications.createChannel({
-      id: 'ezan-vakitleri',
-      name: 'Ezan Vakti Ultra',
-      description: 'Ezan vakti ve hatırlatma bildirimleri',
+      id: SOUND_CHANNEL_ID,
+      name: 'Ezan vakti (sesli)',
+      description: 'Vakit girdiğinde sesli bildirim',
       importance: 5,
       visibility: 1,
-      sound: undefined,
+      sound: ALERT_SOUND,
       vibration: true,
+    });
+    await LocalNotifications.createChannel({
+      id: SILENT_CHANNEL_ID,
+      name: 'Ezan vakti (sessiz)',
+      description: 'Ses kapalıyken vakit bildirimi',
+      importance: 3,
+      visibility: 1,
+      sound: undefined,
+      vibration: false,
     });
   } catch {
     // Android < 8 veya kanal zaten var
   }
 }
 
-export function showPrayerNotification(title: string, body: string) {
+export function showPrayerNotification(title: string, body: string, audible = true) {
   if (Capacitor.isNativePlatform()) {
     void LocalNotifications.schedule({
       notifications: [
@@ -80,7 +94,8 @@ export function showPrayerNotification(title: string, body: string) {
           title,
           body,
           schedule: { at: new Date(Date.now() + 250) },
-          channelId: 'ezan-vakitleri',
+          channelId: audible ? SOUND_CHANNEL_ID : SILENT_CHANNEL_ID,
+          sound: audible ? ALERT_SOUND : undefined,
           extra: { kind: 'instant' },
         },
       ],
@@ -95,6 +110,7 @@ export function showPrayerNotification(title: string, body: string) {
       body,
       icon: `${import.meta.env.BASE_URL}favicon.svg`,
       tag: `ezan-${title}-${new Date().toDateString()}`,
+      silent: !audible,
     });
   } catch {
     // yoksay
@@ -106,6 +122,7 @@ export interface SchedulableAlert {
   title: string;
   body: string;
   at: Date;
+  audible?: boolean;
 }
 
 /** Kapalıyken de çalışması için gelecek vakit bildirimlerini zamanlar (native). */
@@ -128,7 +145,8 @@ export async function schedulePrayerAlerts(alerts: SchedulableAlert[]) {
         title: a.title,
         body: a.body,
         schedule: { at: a.at, allowWhileIdle: true },
-        channelId: 'ezan-vakitleri',
+        channelId: a.audible === false ? SILENT_CHANNEL_ID : SOUND_CHANNEL_ID,
+        sound: a.audible === false ? undefined : ALERT_SOUND,
         extra: { kind: 'scheduled' },
       }));
 

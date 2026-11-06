@@ -46,7 +46,7 @@ export interface FavoriteCity {
   label: string;
 }
 
-export type ThemeMode = 'dark' | 'light' | 'system';
+export type ThemeMode = 'dark' | 'light' | 'system' | 'sand' | 'ocean' | 'rose' | 'olive';
 export type TimeFormat = '24' | '12';
 export type AdhanSoundMode = 'adhan' | 'chime';
 export type AdhanSoundId = 'makkah' | 'madinah' | 'sabah' | 'klcc';

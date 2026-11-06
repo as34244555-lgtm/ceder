@@ -23,7 +23,7 @@ export function useScheduledNotifications(
     let id = 1000;
     const now = Date.now();
 
-    if (settings.notificationsEnabled) {
+    if (settings.notificationsEnabled || settings.soundEnabled) {
       for (const day of days) {
         for (const t of day.times) {
           if (!t.isAdhan || !prayerEnabled(t.key, settings)) continue;
@@ -34,6 +34,7 @@ export function useScheduledNotifications(
               title: `${t.label} vakti 🕌`,
               body: `${locationLabel} — Vaktin hayırlı olsun.`,
               at: t.date,
+              audible: settings.soundEnabled,
             });
             // Iqamah bildirimi
             if (settings.iqamahMinutes > 0) {
@@ -44,6 +45,7 @@ export function useScheduledNotifications(
                   title: `${t.label} kamet`,
                   body: `Kamet zamanı (~${settings.iqamahMinutes} dk sonra)`,
                   at: iqamahAt,
+                  audible: settings.soundEnabled,
                 });
               }
             }
@@ -56,6 +58,7 @@ export function useScheduledNotifications(
                 title: `${t.label} vaktine ${minutes} dk`,
                 body: 'Hazırlığınızı yapabilirsiniz.',
                 at: reminderAt,
+                audible: settings.soundEnabled,
               });
             }
           }
@@ -84,7 +87,7 @@ export function useScheduledNotifications(
       void Preferences.set({ key: 'widget_prayer_times', value: payload }).catch(() => undefined);
       void Preferences.set({ key: 'wear_prayer_times', value: payload }).catch(() => undefined);
 
-      if (settings.ongoingNotification && settings.notificationsEnabled) {
+      if (settings.ongoingNotification && (settings.notificationsEnabled || settings.soundEnabled)) {
         void PrayerNative.startOngoing().catch(() => undefined);
       } else {
         void PrayerNative.stopOngoing().catch(() => undefined);

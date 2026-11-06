@@ -51,9 +51,13 @@ import { primeAudio, unlockAdhanAudio } from './utils/sound';
 import { getIqamahCountdown } from './utils/iqamah';
 import { loadJSON, saveJSON } from './utils/storage';
 import {
+  loadPreferGps,
+  loadSavedLocation,
   loadSelectedCity,
   loadSelectedCountry,
   loadSettings,
+  savePreferGps,
+  saveSavedLocation,
   saveSelectedCity,
   saveSelectedCountry,
   saveSettings,
@@ -89,6 +93,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [selectedCity, setSelectedCity] = useState(() => loadSelectedCity() ?? DEFAULT_CITY);
   const [location, setLocation] = useState<LocationInfo>(() => {
+    const saved = loadSavedLocation();
+    if (saved) return saved;
     const city = loadSelectedCity() ?? DEFAULT_CITY;
     const country = loadSelectedCountry() ?? DEFAULT_COUNTRY;
     return { label: city, city, country, source: 'city' };
@@ -112,7 +118,19 @@ function App() {
   }, [settings.language]);
 
   useEffect(() => {
-    void syncNotificationPermission().then(setNotificationPermission);
+    void syncNotificationPermission().then(async (perm) => {
+      setNotificationPermission(perm);
+      const wantsAlert = loadSettings().soundEnabled || loadSettings().notificationsEnabled;
+      if (
+        wantsAlert &&
+        loadJSON(ONBOARDING_KEY, false) &&
+        Capacitor.isNativePlatform() &&
+        perm !== 'granted'
+      ) {
+        const next = await requestNotificationPermission();
+        setNotificationPermission(next);
+      }
+    });
   }, []);
 
   const { status: geoStatus, coords, error: geoError, requestLocation } = useGeolocation();
@@ -145,6 +163,44 @@ function App() {
   }, [settings]);
 
   useEffect(() => {
+    saveSavedLocation(location);
+  }, [location]);
+
+  useEffect(() => {
+    if (!loadPreferGps()) return;
+    void requestLocation({ highAccuracy: false, silent: true, maximumAge: 5 * 60 * 1000 });
+
+    let disposed = false;
+    let removeNative: (() => void) | undefined;
+    if (Capacitor.isNativePlatform()) {
+      void import('@capacitor/app').then(async ({ App: CapApp }) => {
+        const handle = await CapApp.addListener('appStateChange', ({ isActive }) => {
+          if (isActive && loadPreferGps()) {
+            void requestLocation({
+              highAccuracy: false,
+              silent: true,
+              maximumAge: 2 * 60 * 1000,
+            });
+          }
+        });
+        if (disposed) void handle.remove();
+        else removeNative = () => void handle.remove();
+      });
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && loadPreferGps()) {
+        void requestLocation({ highAccuracy: false, silent: true, maximumAge: 2 * 60 * 1000 });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      disposed = true;
+      removeNative?.();
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [requestLocation]);
+
+  useEffect(() => {
     const unlock = () => {
       primeAudio();
       unlockAdhanAudio();
@@ -161,14 +217,15 @@ function App() {
 
   useEffect(() => {
     if (geoStatus !== 'success' || !coords) return;
-    setLocation({
-      label: 'Konumunuz',
-      city: '',
-      country: '',
+    savePreferGps(true);
+    setLocation((prev) => ({
+      label: prev.source === 'gps' && prev.label ? prev.label : 'Konumunuz',
+      city: prev.source === 'gps' ? prev.city : '',
+      country: prev.source === 'gps' ? prev.country : '',
       latitude: coords.latitude,
       longitude: coords.longitude,
       source: 'gps',
-    });
+    }));
     void reverseGeocodeLabel(coords.latitude, coords.longitude).then((label) => {
       setLocation((loc) => (loc.source === 'gps' ? { ...loc, label, city: label } : loc));
     });
@@ -178,6 +235,7 @@ function App() {
     setSelectedCity(city);
     saveSelectedCity(city);
     saveSelectedCountry(country);
+    savePreferGps(false);
     setLocation({ label: city, city, country, source: 'city' });
   }, []);
 

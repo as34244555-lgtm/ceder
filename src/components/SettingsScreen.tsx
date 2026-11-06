@@ -6,8 +6,6 @@ import {
   Volume2,
   VolumeX,
   Play,
-  Moon,
-  Sun,
   MonitorSmartphone,
   Square,
   Download,
@@ -29,6 +27,7 @@ import { LocationBar } from './LocationBar';
 import { FavoriteCitiesBar } from './FavoriteCitiesBar';
 import type { FavoriteCity } from '../types';
 import { DEVELOPER_EMAIL, DEVELOPER_NAME } from '../constants/legal';
+import { THEME_PALETTES } from '../themePalettes';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -60,9 +59,7 @@ const PRAYER_LABELS: { key: TrackablePrayerKey; label: string }[] = [
   { key: 'yatsi', label: 'Yatsı' },
 ];
 
-const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Moon }[] = [
-  { value: 'dark', label: 'Koyu', icon: Moon },
-  { value: 'light', label: 'Açık', icon: Sun },
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof MonitorSmartphone }[] = [
   { value: 'system', label: 'Sistem', icon: MonitorSmartphone },
 ];
 
@@ -166,8 +163,9 @@ export function SettingsScreen({
     <div className="w-full flex flex-col gap-4 fade-in-up">
       <Section title="Konum">
         <p className="text-xs text-[var(--text-muted)]">
-          Şehir seçin veya GPS ile tam konum kullanın. Ana ekrandaki vakitler buna göre
-          hesaplanır.
+          GPS bir kez verilince konum kaydedilir ve uygulama her açıldığında sessizce
+          yenilenir. Her seferinde “konumumu yenile” demeniz gerekmez. Şehir seçerseniz
+          otomatik GPS durur.
         </p>
         <LocationBar
           selectedCity={selectedCity}
@@ -211,6 +209,33 @@ export function SettingsScreen({
       </Section>
 
       <Section title="Görünüm">
+        <div className="grid grid-cols-2 gap-2">
+          {THEME_PALETTES.map((opt) => {
+            const isActive = settings.theme === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => onChange({ ...settings, theme: opt.id })}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition border ${
+                  isActive
+                    ? 'border-gold-400/70 bg-gold-400/15'
+                    : 'border-[var(--border-soft)] bg-[var(--surface-soft)]'
+                }`}
+              >
+                <span className="flex h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-black/10">
+                  {opt.swatch.map((color) => (
+                    <span key={color} className="h-full flex-1" style={{ background: color }} />
+                  ))}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-[var(--text-primary)]">{opt.label}</span>
+                  <span className="block text-[11px] text-[var(--text-muted)]">{opt.description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
         <div className="flex gap-2">
           {THEME_OPTIONS.map((opt) => {
             const Icon = opt.icon;
@@ -220,7 +245,7 @@ export function SettingsScreen({
                 key={opt.value}
                 type="button"
                 onClick={() => onChange({ ...settings, theme: opt.value })}
-                className={`flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition ${
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-medium transition ${
                   isActive
                     ? 'bg-gold-400/90 text-night-950'
                     : 'bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft-strong)]'
@@ -307,6 +332,10 @@ export function SettingsScreen({
             {settings.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             Ses {settings.soundEnabled ? 'Açık' : 'Kapalı'}
           </button>
+          <p className="text-xs text-[var(--text-muted)]">
+            Vakit girince sesli bildirim gelir. Uygulama açıkken seçtiğiniz ezan da okunur.
+            Ses kapalıysa bildirim sessiz kalır.
+          </p>
 
           <div className="flex gap-2">
             {(

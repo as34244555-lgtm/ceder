@@ -104,8 +104,8 @@ export function LocationBar({
           {worldMode ? 'Türkiye illerinden seç' : 'Türkiye dışında bir şehir mi arıyorsun?'}
         </button>
         {isUsingGps && (
-          <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-            📍 {activeLabel}
+          <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)] text-right">
+            📍 {activeLabel} · otomatik güncellenir
           </span>
         )}
       </div>

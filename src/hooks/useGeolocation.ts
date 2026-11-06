@@ -7,19 +7,31 @@ export interface Coords {
 
 type GeoStatus = 'idle' | 'loading' | 'success' | 'error';
 
+export interface RequestLocationOptions {
+  highAccuracy?: boolean;
+  /** Hata ve yükleniyor durumunu ekrana basmaz; kayıtlı konum durur. */
+  silent?: boolean;
+  maximumAge?: number;
+}
+
 export function useGeolocation() {
   const [status, setStatus] = useState<GeoStatus>('idle');
   const [coords, setCoords] = useState<Coords | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const requestLocation = useCallback((opts?: { highAccuracy?: boolean }) => {
+  const requestLocation = useCallback((opts?: RequestLocationOptions) => {
     if (!('geolocation' in navigator)) {
-      setStatus('error');
-      setError('Tarayıcınız konum servisini desteklemiyor.');
+      if (!opts?.silent) {
+        setStatus('error');
+        setError('Tarayıcınız konum servisini desteklemiyor.');
+      }
       return Promise.resolve(false);
     }
-    setStatus('loading');
-    setError(null);
+    const silent = opts?.silent ?? false;
+    if (!silent) {
+      setStatus('loading');
+      setError(null);
+    }
     const highAccuracy = opts?.highAccuracy ?? true;
     return new Promise<boolean>((resolve) => {
       navigator.geolocation.getCurrentPosition(
@@ -29,21 +41,24 @@ export function useGeolocation() {
             longitude: position.coords.longitude,
           });
           setStatus('success');
+          setError(null);
           resolve(true);
         },
         (err) => {
-          setStatus('error');
-          setError(
-            err.code === err.PERMISSION_DENIED
-              ? 'Konum izni verilmedi. Ayarlar’dan şehir seçerek devam edin.'
-              : 'Konumunuz alınamadı. Ayarlar’dan şehir seçerek devam edin.',
-          );
+          if (!silent) {
+            setStatus('error');
+            setError(
+              err.code === err.PERMISSION_DENIED
+                ? 'Konum izni verilmedi. Ayarlar’dan şehir seçerek devam edin.'
+                : 'Konumunuz alınamadı. Ayarlar’dan şehir seçerek devam edin.',
+            );
+          }
           resolve(false);
         },
         {
           enableHighAccuracy: highAccuracy,
-          timeout: highAccuracy ? 20000 : 10000,
-          maximumAge: highAccuracy ? 30_000 : 5 * 60 * 1000,
+          timeout: highAccuracy ? 20000 : 12000,
+          maximumAge: opts?.maximumAge ?? (highAccuracy ? 60_000 : 10 * 60 * 1000),
         },
       );
     });

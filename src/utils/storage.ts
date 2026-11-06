@@ -1,5 +1,5 @@
 import { DEFAULT_METHOD_ID } from '../data/methods';
-import type { AppSettings, FavoriteCity, PrayerAlertMap } from '../types';
+import type { AppSettings, FavoriteCity, LocationInfo, PrayerAlertMap } from '../types';
 
 const SETTINGS_KEY = 'ezan-app:settings';
 const CITY_KEY = 'ezan-app:selected-city';
@@ -67,6 +67,17 @@ export function loadSettings(): AppSettings {
     if (typeof merged.iqamahMinutes !== 'number') merged.iqamahMinutes = 15;
     if (typeof merged.ongoingNotification !== 'boolean') merged.ongoingNotification = true;
     if (typeof merged.kidsMode !== 'boolean') merged.kidsMode = false;
+    if (
+      merged.theme !== 'dark' &&
+      merged.theme !== 'light' &&
+      merged.theme !== 'system' &&
+      merged.theme !== 'sand' &&
+      merged.theme !== 'ocean' &&
+      merged.theme !== 'rose' &&
+      merged.theme !== 'olive'
+    ) {
+      merged.theme = 'dark';
+    }
 
     return {
       soundEnabled: merged.soundEnabled,
@@ -180,6 +191,39 @@ export function exportAllData(): string {
     }
   }
   return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), data }, null, 2);
+}
+
+const LOCATION_KEY = 'ezan-app:saved-location';
+const PREFER_GPS_KEY = 'ezan-app:prefer-gps';
+
+export function loadSavedLocation(): LocationInfo | null {
+  const saved = loadJSON<LocationInfo | null>(LOCATION_KEY, null);
+  if (!saved || (saved.source !== 'gps' && saved.source !== 'city')) return null;
+  if (!saved.label) return null;
+  return saved;
+}
+
+export function saveSavedLocation(location: LocationInfo) {
+  saveJSON(LOCATION_KEY, location);
+}
+
+export function loadPreferGps(): boolean {
+  try {
+    const raw = localStorage.getItem(PREFER_GPS_KEY);
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+  } catch {
+    // yoksay
+  }
+  return loadSavedLocation()?.source === 'gps';
+}
+
+export function savePreferGps(prefer: boolean) {
+  try {
+    localStorage.setItem(PREFER_GPS_KEY, prefer ? '1' : '0');
+  } catch {
+    // yoksay
+  }
 }
 
 export function importAllData(json: string): boolean {

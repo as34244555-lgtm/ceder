@@ -66,10 +66,11 @@ export function useAdhanAlerts(
         }, settings.adhanSoundMode === 'adhan' ? 2500 : 800);
       }
 
-      if (settings.notificationsEnabled) {
+      if (settings.notificationsEnabled || settings.soundEnabled) {
         showPrayerNotification(
           `${current.label} vakti girdi 🕌`,
           'Vaktin hayırlı olsun. Namazınızı kıldınız mı?',
+          settings.soundEnabled,
         );
       }
 
@@ -93,10 +94,11 @@ export function useAdhanAlerts(
           playReminderPing();
           speakPrayerMessage(prayerReminderSpeech(next.label, minutes));
         }
-        if (settings.notificationsEnabled) {
+        if (settings.notificationsEnabled || settings.soundEnabled) {
           showPrayerNotification(
             `${next.label} vaktine ${minutes} dakika kaldı`,
             'Hazırlığınızı yapabilirsiniz.',
+            settings.soundEnabled,
           );
         }
       }
