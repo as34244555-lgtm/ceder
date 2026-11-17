@@ -60,6 +60,38 @@ export const THEME_PALETTES: ThemePalette[] = [
     appearance: 'dark',
     swatch: ['#12180c', '#2a381c', '#d7b15a'],
   },
+  {
+    id: 'mist',
+    label: 'Sis',
+    description: 'Serin gri aydınlık',
+    bar: '#e7eaee',
+    appearance: 'light',
+    swatch: ['#f4f6f8', '#d5dbe3', '#3d4a5c'],
+  },
+  {
+    id: 'sky',
+    label: 'Gökyüzü',
+    description: 'Açık mavi sabah',
+    bar: '#e4eef8',
+    appearance: 'light',
+    swatch: ['#f3f8fd', '#c5daf0', '#1d4e89'],
+  },
+  {
+    id: 'dusk',
+    label: 'Mor gece',
+    description: 'Menekşe alacakaranlık',
+    bar: '#241433',
+    appearance: 'dark',
+    swatch: ['#140c1e', '#3a2158', '#e7c27a'],
+  },
+  {
+    id: 'ink',
+    label: 'Mürekkep',
+    description: 'Kömür siyahı, gümüş yazı',
+    bar: '#121417',
+    appearance: 'dark',
+    swatch: ['#0c0e11', '#2a3038', '#d7dde6'],
+  },
 ];
 
 export function paletteById(id: PaletteId): ThemePalette {

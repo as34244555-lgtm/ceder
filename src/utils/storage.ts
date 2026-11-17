@@ -67,17 +67,20 @@ export function loadSettings(): AppSettings {
     if (typeof merged.iqamahMinutes !== 'number') merged.iqamahMinutes = 15;
     if (typeof merged.ongoingNotification !== 'boolean') merged.ongoingNotification = true;
     if (typeof merged.kidsMode !== 'boolean') merged.kidsMode = false;
-    if (
-      merged.theme !== 'dark' &&
-      merged.theme !== 'light' &&
-      merged.theme !== 'system' &&
-      merged.theme !== 'sand' &&
-      merged.theme !== 'ocean' &&
-      merged.theme !== 'rose' &&
-      merged.theme !== 'olive'
-    ) {
-      merged.theme = 'dark';
-    }
+    const themes = new Set([
+      'dark',
+      'light',
+      'system',
+      'sand',
+      'ocean',
+      'rose',
+      'olive',
+      'mist',
+      'sky',
+      'dusk',
+      'ink',
+    ]);
+    if (!themes.has(merged.theme)) merged.theme = 'dark';
 
     return {
       soundEnabled: merged.soundEnabled,

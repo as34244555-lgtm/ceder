@@ -224,8 +224,8 @@ export function SettingsScreen({
                 }`}
               >
                 <span className="flex h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-black/10">
-                  {opt.swatch.map((color) => (
-                    <span key={color} className="h-full flex-1" style={{ background: color }} />
+                  {opt.swatch.map((color, index) => (
+                    <span key={`${opt.id}-${index}`} className="h-full flex-1" style={{ background: color }} />
                   ))}
                 </span>
                 <span className="min-w-0">
