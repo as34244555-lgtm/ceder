@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./index-CJA_hhoC.css"])))=>i.map(i=>d[i]);
+import{r as e,t}from"./index-D7s543rY.js";var n=e(`SplashScreen`,{web:()=>t(()=>import(`./web-O5_v7e6y.js`).then(e=>new e.SplashScreenWeb),__vite__mapDeps([0]),import.meta.url)});export{n as SplashScreen};
