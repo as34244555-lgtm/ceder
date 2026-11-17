@@ -22,9 +22,9 @@ export const THEME_PALETTES: ThemePalette[] = [
   },
   {
     id: 'light',
-    label: 'Açık bahçe',
-    description: 'Fildişi zemin, koyu yazı',
-    bar: '#f4efe4',
+    label: 'Açık',
+    description: 'Sıcak fildişi zemin, koyu yazı',
+    bar: '#f6f1e7',
     appearance: 'light',
     swatch: ['#f7f1e6', '#ffffff', '#8a5a10'],
   },
