@@ -535,7 +535,7 @@ export function SettingsScreen({
           Kalıcı durum bildirimi {settings.ongoingNotification ? 'açık' : 'kapalı'}
         </button>
         <p className="text-xs text-[var(--text-muted)]">
-          Android’de sonraki vakitleri bildirim çubuğunda gösterir (foreground service).
+          Android’de sonraki ezana kalan süreyi bildirimde saniye saniye günceller.
         </p>
 
         {isNative && (
