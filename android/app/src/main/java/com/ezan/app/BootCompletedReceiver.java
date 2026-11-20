@@ -16,6 +16,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
             && !"android.intent.action.QUICKBOOT_POWERON".equals(action)) {
             return;
         }
+        PrayerAlarmScheduler.restore(context);
         Intent service = new Intent(context, OngoingPrayerService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(service);

@@ -55,6 +55,13 @@ public class PrayerNativePlugin extends Plugin implements SensorEventListener {
     }
 
     @PluginMethod
+    public void syncPrayerAlarms(PluginCall call) {
+        String payload = call.getString("payload");
+        PrayerAlarmScheduler.sync(getContext(), payload == null ? "" : payload);
+        call.resolve();
+    }
+
+    @PluginMethod
     public void stopOngoing(PluginCall call) {
         Intent service = new Intent(getContext(), OngoingPrayerService.class);
         getContext().stopService(service);

@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { useEffect, useRef } from 'react';
 import type { AppSettings, PrayerTime, TrackablePrayerKey } from '../types';
 import { playFullAdhan, playPrayerChime, playReminderPing } from '../utils/sound';
@@ -54,24 +55,26 @@ export function useAdhanAlerts(
       lastCurrentKeyRef.current = key;
       if (!isEnabledPrayer(current, settings)) return;
 
-      if (settings.soundEnabled) {
-        if (settings.adhanSoundMode === 'adhan') {
-          playFullAdhan(false, `${current.label} Ezanı`, resolveSoundId(current, settings));
-        } else {
-          playPrayerChime();
+      // Android'de ses, uygulama kapalıyken de çalışan alarm servisinden gelir.
+      if (!Capacitor.isNativePlatform()) {
+        if (settings.soundEnabled) {
+          if (settings.adhanSoundMode === 'adhan') {
+            playFullAdhan(false, `${current.label} Ezanı`, resolveSoundId(current, settings));
+          } else {
+            playPrayerChime();
+          }
+          window.setTimeout(() => {
+            speakPrayerMessage(prayerEnteredSpeech(current.label));
+          }, settings.adhanSoundMode === 'adhan' ? 2500 : 800);
         }
-        // Ezan / nağmeden kısa süre sonra sesli vakit mesajı
-        window.setTimeout(() => {
-          speakPrayerMessage(prayerEnteredSpeech(current.label));
-        }, settings.adhanSoundMode === 'adhan' ? 2500 : 800);
-      }
 
-      if (settings.notificationsEnabled || settings.soundEnabled) {
-        showPrayerNotification(
-          `${current.label} vakti girdi 🕌`,
-          'Vaktin hayırlı olsun. Namazınızı kıldınız mı?',
-          settings.soundEnabled,
-        );
+        if (settings.notificationsEnabled || settings.soundEnabled) {
+          showPrayerNotification(
+            `${current.label} vakti girdi 🕌`,
+            'Vaktin hayırlı olsun. Namazınızı kıldınız mı?',
+            settings.soundEnabled,
+          );
+        }
       }
 
       if (isTrackable(current.key)) {

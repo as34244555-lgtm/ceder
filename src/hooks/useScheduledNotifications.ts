@@ -23,19 +23,47 @@ export function useScheduledNotifications(
     let id = 1000;
     const now = Date.now();
 
+    const nativeAlarms: {
+      id: number;
+      at: number;
+      title: string;
+      body: string;
+      mode: string;
+      soundId: string;
+      audible: boolean;
+    }[] = [];
+
     if (settings.notificationsEnabled || settings.soundEnabled) {
       for (const day of days) {
         for (const t of day.times) {
           if (!t.isAdhan || !prayerEnabled(t.key, settings)) continue;
           const at = t.date.getTime();
           if (at > now) {
-            alerts.push({
-              id: id++,
-              title: `${t.label} vakti 🕌`,
-              body: `${locationLabel} — Vaktin hayırlı olsun.`,
-              at: t.date,
-              audible: settings.soundEnabled,
-            });
+            const prayerId = id++;
+            const title = `${t.label} vakti`;
+            const body = `${locationLabel} — Vaktin hayırlı olsun.`;
+            const soundId = t.key === 'imsak' && settings.fajrAdhanSoundId
+              ? settings.fajrAdhanSoundId
+              : settings.adhanSoundId;
+            if (Capacitor.isNativePlatform()) {
+              nativeAlarms.push({
+                id: prayerId,
+                at,
+                title,
+                body,
+                mode: settings.adhanSoundMode,
+                soundId,
+                audible: settings.soundEnabled,
+              });
+            } else {
+              alerts.push({
+                id: prayerId,
+                title: `${title} 🕌`,
+                body,
+                at: t.date,
+                audible: settings.soundEnabled,
+              });
+            }
             // Iqamah bildirimi
             if (settings.iqamahMinutes > 0) {
               const iqamahAt = new Date(at + settings.iqamahMinutes * 60_000);
@@ -65,6 +93,8 @@ export function useScheduledNotifications(
         }
       }
       void schedulePrayerAlerts(alerts);
+    } else {
+      void schedulePrayerAlerts([]);
     }
 
     const upcoming = today.times
@@ -84,6 +114,9 @@ export function useScheduledNotifications(
     });
 
     if (Capacitor.isNativePlatform()) {
+      void PrayerNative.syncPrayerAlarms({
+        payload: JSON.stringify({ alarms: nativeAlarms }),
+      }).catch(() => undefined);
       void Preferences.set({ key: 'widget_prayer_times', value: payload }).catch(() => undefined);
       void Preferences.set({ key: 'wear_prayer_times', value: payload }).catch(() => undefined);
 

@@ -96,7 +96,11 @@ export function SettingsScreen({
   const [importStatus, setImportStatus] = useState<'idle' | 'ok' | 'error'>('idle');
   const isNative = Capacitor.isNativePlatform();
 
-  const toggleSound = () => onChange({ ...settings, soundEnabled: !settings.soundEnabled });
+  const toggleSound = () => {
+    const next = !settings.soundEnabled;
+    if (next && notificationPermission !== 'granted') onRequestNotificationPermission();
+    onChange({ ...settings, soundEnabled: next });
+  };
 
   const toggleNotifications = () => {
     if (!settings.notificationsEnabled && notificationPermission !== 'granted') {
@@ -333,8 +337,8 @@ export function SettingsScreen({
             Ses {settings.soundEnabled ? 'Açık' : 'Kapalı'}
           </button>
           <p className="text-xs text-[var(--text-muted)]">
-            Vakit girince sesli bildirim gelir. Uygulama açıkken seçtiğiniz ezan da okunur.
-            Ses kapalıysa bildirim sessiz kalır.
+            Vakit girince, uygulama kapalı olsa da seçtiğiniz ezan veya kısa nağme çalar.
+            Ses kapalıysa yalnızca sessiz bildirim gelir. Tam zamanlı alarm iznini açık tutun.
           </p>
 
           <div className="flex gap-2">
