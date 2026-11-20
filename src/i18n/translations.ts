@@ -1,0 +1,85 @@
+export type AppLanguage = 'tr' | 'en' | 'ar';
+
+const dict = {
+  tr: {
+    appName: 'Ezan Vakti Ultra',
+    prayerTimes: 'Namaz Vakitleri',
+    nextPrayer: 'Sonraki vakit',
+    settings: 'Ayarlar',
+    quran: "Kur'an-ı Kerim",
+    tracker: 'Namazlarım',
+    qibla: 'Kıble',
+    calendar: 'Takvim',
+    more: 'Daha',
+    mosques: 'Yakındaki Camiler',
+    halal: 'Helal Mekânlar',
+    hajj: 'Hac & Umre Rehberi',
+    kidsMode: 'Çocuk Modu',
+    privacy: 'Gizlilik',
+    backup: 'Yedekle / Geri Yükle',
+    iqamah: 'Kamet',
+    streak: 'Seri',
+    language: 'Dil',
+    ongoingNotif: 'Kalıcı durum bildirimi',
+    batteryOpt: 'Pil optimizasyonu istisnası',
+    exactAlarm: 'Tam zamanlı alarm izni',
+  },
+  en: {
+    appName: 'Ezan Vakti Ultra',
+    prayerTimes: 'Prayer Times',
+    nextPrayer: 'Next prayer',
+    settings: 'Settings',
+    quran: 'Holy Quran',
+    tracker: 'My Prayers',
+    qibla: 'Qibla',
+    calendar: 'Calendar',
+    more: 'More',
+    mosques: 'Nearby Mosques',
+    halal: 'Halal Places',
+    hajj: 'Hajj & Umrah Guide',
+    kidsMode: 'Kids Mode',
+    privacy: 'Privacy',
+    backup: 'Backup / Restore',
+    iqamah: 'Iqamah',
+    streak: 'Streak',
+    language: 'Language',
+    ongoingNotif: 'Ongoing status notification',
+    batteryOpt: 'Battery optimization exception',
+    exactAlarm: 'Exact alarm permission',
+  },
+  ar: {
+    appName: 'Ezan Vakti Ultra',
+    prayerTimes: 'مواقيت الصلاة',
+    nextPrayer: 'الصلاة التالية',
+    settings: 'الإعدادات',
+    quran: 'القرآن الكريم',
+    tracker: 'صلواتي',
+    qibla: 'القبلة',
+    calendar: 'التقويم',
+    more: 'المزيد',
+    mosques: 'مساجد قريبة',
+    halal: 'أماكن حلال',
+    hajj: 'دليل الحج والعمرة',
+    kidsMode: 'وضع الأطفال',
+    privacy: 'الخصوصية',
+    backup: 'نسخ احتياطي / استعادة',
+    iqamah: 'الإقامة',
+    streak: 'سلسلة',
+    language: 'اللغة',
+    ongoingNotif: 'إشعار دائم',
+    batteryOpt: 'استثناء تحسين البطارية',
+    exactAlarm: 'إذن المنبه الدقيق',
+  },
+} as const;
+
+export type I18nKey = keyof (typeof dict)['tr'];
+
+export function t(lang: AppLanguage, key: I18nKey): string {
+  return dict[lang][key] ?? dict.tr[key] ?? key;
+}
+
+export const LANG_OPTIONS: { id: AppLanguage; label: string }[] = [
+  { id: 'tr', label: 'Türkçe' },
+  { id: 'en', label: 'English' },
+  { id: 'ar', label: 'العربية' },
+];
